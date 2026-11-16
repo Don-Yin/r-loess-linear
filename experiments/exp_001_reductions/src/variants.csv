@@ -1,0 +1,9 @@
+name,verdict,reason,module,runner
+block_buffer_by_vertex_count,kept,smaller block buffer with unchanged arithmetic,,
+source_defaults,kept,plain build matches the measured block width,,
+probes_out_of_production,kept,production omits test entries and storage,verify-builds.R,verify_builds
+trimmed_qr,kept,removes unused QR branches without changing operation order,verify-qr.R,verify_qr
+single_plan_path,dropped,one-predictor prediction is substantially slower,verify-diagnostics.R,verify_diagnostics
+no_instrumented_ehg128,kept,fewer source lines at the cost of all vertices for flagged points,verify-flagged.R,run_flagged_cases
+single_vertex_fit,kept,one vertex fit preserves ordinary fitting and silent replay,verify-fit.R,verify_fit
+zero_radius_retained_first,kept,avoids exceptional replay when a zero-radius vertex fits the cap,verify-retention.R,verify_retention

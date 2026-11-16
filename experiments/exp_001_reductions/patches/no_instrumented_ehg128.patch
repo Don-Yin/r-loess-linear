@@ -1,0 +1,439 @@
+--- a/loessc.c
++++ b/loessc.c
+@@ -239,7 +239,6 @@
+ void F77_NAME(lowesfpeval)(int*,int*,int*,double*,double*,double*);
+ void F77_NAME(lowesfnp)(int*,double*,int*,double*,int*,double*,int*,double*,int*);
+ void F77_NAME(lowesfne)(int*,double*,int*,double*,int*,double*,int*,double*,int*,double*,double*);
+-void F77_NAME(lowesfdep)(int*,double*,int*,double*,double*,int*);
+ static double factor_observed[20],factor_geometry_bytes,retention_observed[4],factor_exceptional[3];
+ void loess_exception_probe(double *out) { memcpy(out,factor_exceptional,sizeof(factor_exceptional)); }
+ void loess_retention_probe(double *out) { memcpy(out,retention_observed,sizeof(retention_observed)); }
+@@ -248,23 +247,6 @@
+ void loess_block_probe(double *out) {
+     out[0]=LOESS_COEFFICIENT_BLOCK;
+     out[1]=ceil(factor_observed[0]/LOESS_COEFFICIENT_BLOCK);
+-}
+-
+-/* Dedicated callbacks for the geometry-only copy of actual ehg128 reads.
+- * No warning API is intercepted; ordinary interpolation still owns diagnostics. */
+-static int *dep_which,*dep_warn,dep_nv,dep_m,dep_query;
+-void F77_SUB(fdepset)(int *point) {
+-    if(*point<1||*point>dep_m)error("dependency point exceeds prediction count");
+-    dep_query=*point-2;
+-}
+-void F77_SUB(fdepbegin)(void) {
+-    if(++dep_query<0||dep_query>=dep_m)error("dependency plan query index exceeds prediction count");
+-}
+-void F77_SUB(fdepwarn)(void) { dep_warn[dep_query]=1; }
+-double F77_SUB(fdepread)(double *value,int *vertex) {
+-    if(*vertex<1||*vertex>dep_nv)error("dependency plan vertex index exceeds tree size");
+-    dep_which[*vertex-1]=1;
+-    return *value;
+ }
+ 
+ static void
+@@ -304,9 +286,9 @@
+     for(int i=0;i<vc* *m;++i)which[ids[i]-1]=1;
+     if(edges)for(int p=0;p<*m;++p)if(!iwarn[p])
+         for(int e=0;e<8;++e)which[edgeids[8*p+e]-1]=1;
+-    if(!planned) {
+-        dep_which=which;dep_warn=iwarn;dep_nv=nv;dep_m=*m;dep_query=-1;
+-        F77_CALL(lowesfdep)(iv,v,m,z,coef,iwarn);
++    for(int p=0;p<*m;++p)if(iwarn[p]) {
++        for(int l=0;l<nv;++l)which[l]=1;
++        break;
+     }
+     int needed=0;
+     for(int l=0;l<nv;++l)if(which[l])which[l]=++needed;
+--- a/loessf.f
++++ b/loessf.f
+@@ -2085,367 +2085,6 @@
+       call ehg184a(s, len(s), x, n, inc)
+       end
+ 
+-      DOUBLE PRECISION function ehg128dep(z,d,ncmax,vc,a,xi,lo,hi,c,
+-     +     v,
+-     +     nvmax,vval)
+-
+-c     implicit none
+-c Args
+-      integer d,ncmax,nvmax,vc
+-      integer a(ncmax),c(vc,ncmax),hi(ncmax),lo(ncmax)
+-      DOUBLE PRECISION z(d),xi(ncmax),v(nvmax,d), vval(0:d,nvmax)
+-c Vars
+-      logical i2,i3,i4,i5,i6,i7,i8,i9,i10
+-      integer i,i1,i11,i12,ig,ii,j,lg,ll,m,nt,ur
+-      integer t(20)
+-      DOUBLE PRECISION ge,gn,gs,gw,gpe,gpn,gps,gpw,h,phi0,phi1,
+-     +     psi0,psi1,s,sew,sns,v0,v1,xibar
+-      DOUBLE PRECISION g(0:8,256),g0(0:8),g1(0:8)
+-
+-      double precision fdepread
+-      external fdepread,fdepbegin
+-      external fdepwarn
+-      call fdepbegin()
+-c     locate enclosing cell
+-      nt=1
+-      t(nt)=1
+-      j=1
+-c     top of while loop
+-    3 if(.not.(a(j).ne.0))goto 4
+-         nt=nt+1
+-         if(z(a(j)).le.xi(j))then
+-            i1=lo(j)
+-         else
+-            i1=hi(j)
+-         end if
+-         t(nt)=i1
+-         if(.not.(nt.lt.20))then
+-            call fdepwarn()
+-         end if
+-         j=t(nt)
+-         goto 3
+-c     bottom of while loop
+-    4 continue
+-c     tensor
+-      do 5 i12=1,vc
+-         do 6 i11=0,d
+-            g(i11,i12)=fdepread(vval(i11,c(i12,j)),
+-     +                         c(i12,j))
+-    6    continue
+-    5 continue
+-      lg=vc
+-      ll=c(1,j)
+-      ur=c(vc,j)
+-      do 7 i=d,1,-1
+-         h=(z(i)-v(ll,i))/(v(ur,i)-v(ll,i))
+-         if(h.lt.-.001D0)then
+-            call fdepwarn()
+-            call fdepwarn()
+-         else
+-            if(1.001D0.lt.h)then
+-               call fdepwarn()
+-               call fdepwarn()
+-            end if
+-         end if
+-         if(-.001D0.le.h)then
+-            i2=(h.le.1.001D0)
+-         else
+-            i2=.false.
+-         end if
+-         if(.not.i2)then
+-            call fdepwarn()
+-         end if
+-         lg=int(DBLE(lg)/2.D0)
+-         do 8 ig=1,lg
+-c           Hermite basis
+-            phi0=(1-h)**2*(1+2*h)
+-            phi1=h**2*(3-2*h)
+-            psi0=h*(1-h)**2
+-            psi1=h**2*(h-1)
+-            g(0,ig)=phi0*g(0,ig) + phi1*g(0,ig+lg) +
+-     +           (psi0*g(i,ig)+psi1*g(i,ig+lg)) * (v(ur,i)-v(ll,i))
+-            do 9 ii=1,i-1
+-               g(ii,ig)=phi0*g(ii,ig)+phi1*g(ii,ig+lg)
+-    9       continue
+-    8    continue
+-    7 continue
+-      s=g(0,1)
+-c     blending
+-      if(d.eq.2)then
+-c        ----- North -----
+-         v0=v(ll,1)
+-         v1=v(ur,1)
+-         do 10 i11=0,d
+-            g0(i11)=fdepread(vval(i11,c(3,j)),
+-     +                         c(3,j))
+-   10    continue
+-         do 11 i11=0,d
+-            g1(i11)=fdepread(vval(i11,c(4,j)),
+-     +                         c(4,j))
+-   11    continue
+-         xibar=v(ur,2)
+-         m=nt-1
+-c        top of while loop
+-   12    if(m.eq.0)then
+-            i4=.true.
+-         else
+-            if(a(t(m)).eq.2)then
+-               i3=(xi(t(m)).eq.xibar)
+-            else
+-               i3=.false.
+-            end if
+-            i4=i3
+-         end if
+-         if(.not.(.not.i4))goto 13
+-            m=m-1
+-c           voidp junk
+-            goto 12
+-c        bottom of while loop
+-   13    if(m.ge.1)then
+-            m=hi(t(m))
+-c           top of while loop
+-   14       if(.not.(a(m).ne.0))goto 15
+-               if(z(a(m)).le.xi(m))then
+-                  m=lo(m)
+-               else
+-                  m=hi(m)
+-               end if
+-               goto 14
+-c           bottom of while loop
+-   15       if(v0.lt.v(c(1,m),1))then
+-               v0=v(c(1,m),1)
+-               do 16 i11=0,d
+-                  g0(i11)=fdepread(vval(i11,c(1,m)),
+-     +                         c(1,m))
+-   16          continue
+-            end if
+-            if(v(c(2,m),1).lt.v1)then
+-               v1=v(c(2,m),1)
+-               do 17 i11=0,d
+-                  g1(i11)=fdepread(vval(i11,c(2,m)),
+-     +                         c(2,m))
+-   17          continue
+-            end if
+-         end if
+-         h=(z(1)-v0)/(v1-v0)
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         gn=phi0*g0(0)+phi1*g1(0)+(psi0*g0(1)+psi1*g1(1))*(v1-v0)
+-         gpn=phi0*g0(2)+phi1*g1(2)
+-c        ----- South -----
+-         v0=v(ll,1)
+-         v1=v(ur,1)
+-         do 18 i11=0,d
+-            g0(i11)=fdepread(vval(i11,c(1,j)),
+-     +                         c(1,j))
+-   18    continue
+-         do 19 i11=0,d
+-            g1(i11)=fdepread(vval(i11,c(2,j)),
+-     +                         c(2,j))
+-   19    continue
+-         xibar=v(ll,2)
+-         m=nt-1
+-c        top of while loop
+-   20    if(m.eq.0)then
+-            i6=.true.
+-         else
+-            if(a(t(m)).eq.2)then
+-               i5=(xi(t(m)).eq.xibar)
+-            else
+-               i5=.false.
+-            end if
+-            i6=i5
+-         end if
+-         if(.not.(.not.i6))goto 21
+-            m=m-1
+-c           voidp junk
+-            goto 20
+-c        bottom of while loop
+-   21    if(m.ge.1)then
+-            m=lo(t(m))
+-c           top of while loop
+-   22       if(.not.(a(m).ne.0))goto 23
+-               if(z(a(m)).le.xi(m))then
+-                  m=lo(m)
+-               else
+-                  m=hi(m)
+-               end if
+-               goto 22
+-c           bottom of while loop
+-   23       if(v0.lt.v(c(3,m),1))then
+-               v0=v(c(3,m),1)
+-               do 24 i11=0,d
+-                  g0(i11)=fdepread(vval(i11,c(3,m)),
+-     +                         c(3,m))
+-   24          continue
+-            end if
+-            if(v(c(4,m),1).lt.v1)then
+-               v1=v(c(4,m),1)
+-               do 25 i11=0,d
+-                  g1(i11)=fdepread(vval(i11,c(4,m)),
+-     +                         c(4,m))
+-   25          continue
+-            end if
+-         end if
+-         h=(z(1)-v0)/(v1-v0)
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         gs=phi0*g0(0)+phi1*g1(0)+(psi0*g0(1)+psi1*g1(1))*(v1-v0)
+-         gps=phi0*g0(2)+phi1*g1(2)
+-c        ----- East -----
+-         v0=v(ll,2)
+-         v1=v(ur,2)
+-         do 26 i11=0,d
+-            g0(i11)=fdepread(vval(i11,c(2,j)),
+-     +                         c(2,j))
+-   26    continue
+-         do 27 i11=0,d
+-            g1(i11)=fdepread(vval(i11,c(4,j)),
+-     +                         c(4,j))
+-   27    continue
+-         xibar=v(ur,1)
+-         m=nt-1
+-c        top of while loop
+-   28    if(m.eq.0)then
+-            i8=.true.
+-         else
+-            if(a(t(m)).eq.1)then
+-               i7=(xi(t(m)).eq.xibar)
+-            else
+-               i7=.false.
+-            end if
+-            i8=i7
+-         end if
+-         if(.not.(.not.i8))goto 29
+-            m=m-1
+-c           voidp junk
+-            goto 28
+-c        bottom of while loop
+-   29    if(m.ge.1)then
+-            m=hi(t(m))
+-c           top of while loop
+-   30       if(.not.(a(m).ne.0))goto 31
+-               if(z(a(m)).le.xi(m))then
+-                  m=lo(m)
+-               else
+-                  m=hi(m)
+-               end if
+-               goto 30
+-c           bottom of while loop
+-   31       if(v0.lt.v(c(1,m),2))then
+-               v0=v(c(1,m),2)
+-               do 32 i11=0,d
+-                  g0(i11)=fdepread(vval(i11,c(1,m)),
+-     +                         c(1,m))
+-   32          continue
+-            end if
+-            if(v(c(3,m),2).lt.v1)then
+-               v1=v(c(3,m),2)
+-               do 33 i11=0,d
+-                  g1(i11)=fdepread(vval(i11,c(3,m)),
+-     +                         c(3,m))
+-   33          continue
+-            end if
+-         end if
+-         h=(z(2)-v0)/(v1-v0)
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         ge=phi0*g0(0)+phi1*g1(0)+(psi0*g0(2)+psi1*g1(2))*(v1-v0)
+-         gpe=phi0*g0(1)+phi1*g1(1)
+-c        ----- West -----
+-         v0=v(ll,2)
+-         v1=v(ur,2)
+-         do 34 i11=0,d
+-            g0(i11)=fdepread(vval(i11,c(1,j)),
+-     +                         c(1,j))
+-   34    continue
+-         do 35 i11=0,d
+-            g1(i11)=fdepread(vval(i11,c(3,j)),
+-     +                         c(3,j))
+-   35    continue
+-         xibar=v(ll,1)
+-         m=nt-1
+-c        top of while loop
+-   36    if(m.eq.0)then
+-            i10=.true.
+-         else
+-            if(a(t(m)).eq.1)then
+-               i9=(xi(t(m)).eq.xibar)
+-            else
+-               i9=.false.
+-            end if
+-            i10=i9
+-         end if
+-         if(.not.(.not.i10))goto 37
+-            m=m-1
+-c           voidp junk
+-            goto 36
+-c        bottom of while loop
+-   37    if(m.ge.1)then
+-            m=lo(t(m))
+-c           top of while loop
+-   38       if(.not.(a(m).ne.0))goto 39
+-               if(z(a(m)).le.xi(m))then
+-                  m=lo(m)
+-               else
+-                  m=hi(m)
+-               end if
+-               goto 38
+-c           bottom of while loop
+-   39       if(v0.lt.v(c(2,m),2))then
+-               v0=v(c(2,m),2)
+-               do 40 i11=0,d
+-                  g0(i11)=fdepread(vval(i11,c(2,m)),
+-     +                         c(2,m))
+-   40          continue
+-            end if
+-            if(v(c(4,m),2).lt.v1)then
+-               v1=v(c(4,m),2)
+-               do 41 i11=0,d
+-                  g1(i11)=fdepread(vval(i11,c(4,m)),
+-     +                         c(4,m))
+-   41          continue
+-            end if
+-         end if
+-         h=(z(2)-v0)/(v1-v0)
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         gw=phi0*g0(0)+phi1*g1(0)+(psi0*g0(2)+psi1*g1(2))*(v1-v0)
+-         gpw=phi0*g0(1)+phi1*g1(1)
+-c        NS
+-         h=(z(2)-v(ll,2))/(v(ur,2)-v(ll,2))
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         sns=phi0*gs+phi1*gn+(psi0*gps+psi1*gpn)*(v(ur,2)-v(ll,2))
+-c        EW
+-         h=(z(1)-v(ll,1))/(v(ur,1)-v(ll,1))
+-c        Hermite basis
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         sew=phi0*gw+phi1*ge+(psi0*gpw+psi1*gpe)*(v(ur,1)-v(ll,1))
+-         s=(sns+sew)-s
+-      end if
+-      ehg128dep=s
+-      return
+-      end
+-
+       subroutine ehg130(x,n,d,nc,ncmax,vc,nv,nvmax,a,c,hi,lo,pi,v,
+      +     vhit,xi,ntol,fd,dd)
+       integer identi,d,dd,i1,j,n,nc,ncmax,ntol,nv,nvmax,vc
+@@ -3212,21 +2851,3 @@
+       return
+       end
+ 
+-c This geometry-only pass uses the actual ehg128 read sites, instrumented at
+-c build time, with explicit diagnostic markers; no numerical call is replaced.
+-      subroutine lowesfdep(iv,wv,m,z,zero,diag)
+-      integer iv(*),m,i,j,diag(m)
+-      double precision wv(*),z(m,*),zero(*),q(8),ignored,ehg128dep
+-      external ehg128dep,fdepset
+-      do 1 i=1,m
+-         if(diag(i).eq.0)goto 1
+-         call fdepset(i)
+-         do 2 j=1,iv(2)
+-            q(j)=z(i,j)
+-    2    continue
+-         ignored=ehg128dep(q,iv(2),iv(17),iv(4),iv(iv(7)),
+-     +        wv(iv(12)),iv(iv(10)),iv(iv(9)),iv(iv(8)),
+-     +        wv(iv(11)),iv(14),zero)
+-    1 continue
+-      return
+-      end

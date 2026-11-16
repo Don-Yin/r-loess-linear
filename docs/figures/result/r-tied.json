@@ -1,0 +1,82 @@
+{
+  "spike-cloud-2-4096": {
+    "identical": true,
+    "seconds": 4.204,
+    "bytes": 94474008
+  },
+  "spike-cloud-2-8192": {
+    "identical": true,
+    "seconds": 33.024,
+    "bytes": 376806360
+  },
+  "spike-cloud-3-4096": {
+    "identical": true,
+    "seconds": 9.31699999999998,
+    "bytes": 121501048
+  },
+  "spike-cloud-3-8192": {
+    "identical": true,
+    "seconds": 69.331,
+    "bytes": 484534424
+  },
+  "spike-cloud-4-4096": {
+    "identical": true,
+    "seconds": 16.8770000000001,
+    "bytes": 148600176
+  },
+  "spike-cloud-4-8192": {
+    "identical": true,
+    "seconds": 133.465,
+    "bytes": 592406664
+  },
+  "repeated-grid-2-4096": {
+    "identical": true,
+    "seconds": 0.0720000000001164,
+    "bytes": 2213400
+  },
+  "repeated-grid-2-8192": {
+    "identical": true,
+    "seconds": 0.195000000000164,
+    "bytes": 8096280
+  },
+  "repeated-grid-3-4096": {
+    "identical": true,
+    "seconds": 0.0930000000000746,
+    "bytes": 2869240
+  },
+  "repeated-grid-3-8192": {
+    "identical": true,
+    "seconds": 0.242000000000189,
+    "bytes": 10456568
+  },
+  "repeated-grid-4-4096": {
+    "identical": true,
+    "seconds": 0.196999999999889,
+    "bytes": 3590736
+  },
+  "repeated-grid-4-8192": {
+    "identical": true,
+    "seconds": 0.498000000000047,
+    "bytes": 12948176
+  },
+  "grid-cloud-2-8192": {
+    "identical": true,
+    "seconds": 1.27199999999993,
+    "bytes": 4425240
+  },
+  "grid-cloud-3-8192": {
+    "identical": true,
+    "seconds": 1.26099999999997,
+    "bytes": 5736440
+  },
+  "grid-cloud-4-8192": {
+    "identical": true,
+    "seconds": 1.58699999999999,
+    "bytes": 7178832
+  },
+  "zero-radius-1-8192-128": {
+    "identical": true,
+    "seconds": 0.536000000000058,
+    "bytes": 269156936
+  }
+}

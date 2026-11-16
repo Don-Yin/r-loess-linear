@@ -1,0 +1,16 @@
+.results/
+.intermediates/
+legacy-runs/
+.thread/
+loesslin_*.tar.gz
+loesslin.Rcheck/
+*.o
+*.so
+.DS_Store
+**/docs/video/
+# working files of the figure scripts; the images the documents show are in docs/assets/
+docs/figures/.bundles/
+__pycache__/
+.ipynb_checkpoints/
+# editor settings with this machine's paths
+pyrightconfig.json

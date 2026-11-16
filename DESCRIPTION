@@ -1,0 +1,26 @@
+Package: loesslin
+Type: Package
+Title: Memory-Efficient Standard Errors for Loess Predictions
+Version: 0.0.1
+Authors@R: c(
+    person("Don", "Yin", email = "Don_Yin@outlook.com",
+           role = c("aut", "cre", "cph")),
+    person("R Core Team", role = c("ctb", "cph")),
+    person(family = "Cleveland", role = "ctb"),
+    person(family = "Grosse", role = "ctb"),
+    person(family = "Shyu", role = "ctb"),
+    person("AT&T", role = "cph"))
+Description: Computes predictions and pointwise standard errors from a fit
+    produced by stats::loess(), preserving the results of predict() with
+    se = TRUE. For the interpolation surface, compact local fit records
+    and ordered recomputation replace the quadratic native workspace.
+    The direct surface retains R's standard calculation. Derived from
+    the loess implementation distributed with R.
+License: GPL-2 | GPL-3
+Copyright: 2026 Don Yin; 1998-2025 The R Core Team;
+    1989, 1992 AT&T. See inst/COPYRIGHTS for the original notice.
+Depends: R (>= 4.5.0)
+Imports: stats
+Encoding: UTF-8
+NeedsCompilation: yes
+SystemRequirements: C and Fortran compilers, BLAS, LAPACK

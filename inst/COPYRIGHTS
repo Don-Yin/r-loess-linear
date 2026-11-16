@@ -1,0 +1,27 @@
+loesslin
+
+Copyright (C) 2026 Don Yin for the package interface and new code.
+
+The implementation is derived from the R loess sources, copyright
+1998-2025 The R Core Team and copyright 1989, 1992 AT&T. The original
+loess authors are Cleveland, Grosse, and Shyu. The captured QR routines
+retain the arithmetic of the LINPACK routines used by R.
+
+The package is distributed under the GNU General Public License,
+version 2 or version 3. Copies of these licenses are available with R
+in share/licenses/GPL-2 and share/licenses/GPL-3, and at
+https://www.R-project.org/Licenses/.
+
+Original AT&T notice
+
+The authors of this software are Cleveland, Grosse, and Shyu.
+Copyright (c) 1989, 1992 by AT&T.
+Permission to use, copy, modify, and distribute this software for any
+purpose without fee is hereby granted, provided that this entire notice
+is included in all copies of any software which is or includes a copy
+or modification of this software and in all copies of the supporting
+documentation for such software.
+THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTY. IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
+REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
+OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.

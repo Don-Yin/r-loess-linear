@@ -1,0 +1,3 @@
+useDynLib(loesslin, .registration = TRUE, .fixes = "C_")
+export(predict_se)
+importFrom(stats, delete.response, model.frame, na.pass, terms)

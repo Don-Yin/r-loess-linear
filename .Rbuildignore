@@ -1,0 +1,11 @@
+^experiments$
+^docs$
+^shared$
+^legacy-runs$
+^\.thread$
+^\.git$
+^\.gitignore$
+^\.results$
+^\.intermediates$
+^loesslin_.*[.]tar[.]gz$
+^loesslin[.]Rcheck$
