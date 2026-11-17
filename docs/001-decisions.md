@@ -4,7 +4,7 @@
 - one function, `loesslin::predict_se()`, on a fit from R's own `loess()`. it replaces nothing in R; the aim is that R adopts the change
 - `exp_000` caches inverse-neighbor lookups; `exp_001` then stores coefficients for the actual tree vertices. both retain a quadratic worst case and the full influence matrix
 - `exp_002` records and replays vertex fits; `exp_003` tests eight separate reductions; `exp_004` checks tied worst cases
-- the package source is `exp_005`: the kept changes of `exp_003`, plus zero-radius vertices retained first. its current physical source-line difference is in [the README table](../README.md#experiments) and `exp_005`'s `lines-against-r.csv: variant=package, part=source`; notices count, the standalone build adapter does not
+- the package source is `exp_005`: the kept changes of `exp_003`, plus zero-radius vertices retained first. its current physical source-line difference is in [the experiment table](../experiments/README.md) and `exp_005`'s `lines-against-r.csv: variant=package, part=source`; notices count, the standalone build adapter does not
 - `exp_006` retains only each vertex's neighborhood. it is a candidate and is not in the package
 - the package and R harness stay in R, C and Fortran; `exp_008` separately ports the cache and actual-vertex changes to scikit-misc 0.5.3 in Python. figures are drawn with Python
 - each R figure compares original R with the builds of that one experiment; the Python-port figure uses unpatched scikit-misc as its reference

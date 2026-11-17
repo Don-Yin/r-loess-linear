@@ -1,4 +1,4 @@
-# Recount source changes against original R and stop when the README column is stale.
+# Recount source changes against original R and stop when the experiments/README.md column is stale.
 
 line_range <- function(values) {
   limits <- range(values)
@@ -26,7 +26,7 @@ recount_shorter <- function(root) {
     added = counts$added - adapter$added, removed = counts$removed - adapter$removed)
 }
 
-check_lines <- function(root, readme = file.path(root, "README.md")) {
+check_lines <- function(root, readme = file.path(root, "experiments", "README.md")) {
   counter <- new.env(parent = globalenv())
   sys.source(file.path(root, "shared", "harness", "lines.R"), counter)
   invisible(capture.output(counter$main(root)))
@@ -36,7 +36,7 @@ check_lines <- function(root, readme = file.path(root, "README.md")) {
     exp_004_worst_case = "prototype", exp_005_package_source = "package",
     exp_006_sparse_retention = "sparse")
   text <- readLines(readme, warn = FALSE)
-  if (any(grepl("](experiments/exp_007_shorter_source/README.md)", text, fixed = TRUE))) {
+  if (any(grepl("](exp_007_shorter_source/README.md)", text, fixed = TRUE))) {
     variants$exp_007_shorter_source <- "deletions_only"
   }
   split_row <- function(row) trimws(strsplit(row, "|", fixed = TRUE)[[1]])[-1L]
@@ -49,7 +49,7 @@ check_lines <- function(root, readme = file.path(root, "README.md")) {
   table <- after[seq_len(match(FALSE, startsWith(after, "|"), nomatch = length(after) + 1L) - 1L)]
   rows <- grep("^\\| \\[exp_[0-9]{3} ", table, value = TRUE)
   experiments <- vapply(rows, function(row) {
-    sub(".*\\]\\(experiments/([^/]+)/README\\.md\\).*", "\\1", split_row(row)[1])
+    sub(".*\\]\\(([^/]+)/README\\.md\\).*", "\\1", split_row(row)[1])
   }, "")
   if (!identical(unname(experiments), names(variants))) {
     stop("experiment rows in ", readme, " are ", paste(experiments, collapse = ", "),
