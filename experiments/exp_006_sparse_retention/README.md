@@ -6,26 +6,26 @@ A retained vertex keeps a row of `N` coefficients, but only the `span * N` obser
 
 ## result
 
-Identical in 275/275 checks (256 against R, 19 against the Nov 6 patch), and faster than R on all 15 tied inputs. It requests less memory than R on 11 of them and 1.8 to 7.5 times more on 4. A candidate, not in the package yet: ordinary inputs measured 0 to 5% slower than the package source on a busy machine.
+Identical in 275/275 checks (256 against R, 19 against the Nov 6 patch), and faster than R on all 15 tied inputs. It requests less memory than R on 11 of them and 1.8 to 7.5 times more on 4. A candidate, not in the package: ordinary inputs measured 0 to 5% slower than the package source on a busy machine.
 
 | input | memory | R | | time | R | |
 |---|---:|---:|---|---:|---:|---|
 | one predictor, N = 45,000 | 11.7 MB | 20.3 GB | **1,724× less** | 0.038 s | 21.8 s | **573× faster** |
 | tied grid `grid-cloud-4-8192` | 53.7 MB | 7.2 MB | **7.5× more** | 0.86 s | 1.59 s | **1.8× faster** |
 
-On the tied grid a neighbourhood has 15 points, so R's own workspace is small; what sparse retention still requests beyond R is not located yet. R was timed in a separate run, so its time ratio is rough.
+On the tied grid a neighbourhood has 15 points, so R's workspace is small; what sparse retention still requests beyond R is not located yet. R was timed in a separate run, so its time ratio is rough.
 
 One predictor, N = 45,000:
 
-![memory requested against time for R and sparse retention at N = 45,000](../../docs/assets/exp_006-result.png)
+![R and sparse retention at N = 45,000](../../docs/assets/exp_006-result.png)
 
 The 15 tied inputs, against R:
 
-![time and memory of sparse retention on the 15 tied inputs, as multiples of R's](../../docs/assets/exp_006-tied.png)
+![R and sparse retention on the 15 tied inputs](../../docs/assets/exp_006-tied.png)
 
 `grid-cloud-4` over N:
 
-![time and memory of R and sparse retention over N, measured with atime](../../docs/assets/exp_006-atime.png)
+![R and sparse retention over N, measured with atime](../../docs/assets/exp_006-atime.png)
 
 [how to read the figures](../../docs/004-results.md#how-to-read-the-figures)
 
@@ -60,9 +60,9 @@ Measured on a busy machine (load 36 to 69 during the timing).
 
 - 275/275 shared cases identical with the source defaults, and 275/275 at retention caps of 0, 4,096 and 65,536 bytes, where slots are reused and taken over (`summary.json: checks`, `cap_checks`). The before side: 275/275.
 - Tied inputs: 15/15 identical in both builds (`tied-comparison.csv`).
-- Physical source lines against original R: +1,312 / −60, against +1,253 / −59 for the package source (`lines-against-r.csv: variant=sparse/before, part=source, added/removed`). The standalone `register.c` adapter is separate; copyright and modification notices are included.
+- Physical source lines against R: +1,312 / −60, against +1,253 / −59 for the package source (`lines-against-r.csv: variant=sparse/before, part=source, added/removed`). The standalone `register.c` adapter is separate; copyright and modification notices are included.
 - Memory requested, ordinary timing cases: 0.75 to 0.90 of the package source; one predictor at N = 45,000 goes from 15.7 MB to 11.7 MB (`timing-comparison.csv`).
-- Time, ordinary timing cases: 1.00 to 1.05 of the package source in all nine, so a little slower. An earlier run of five of them on the same builds gave 1.00 to 1.06.
+- Time, ordinary timing cases: 1.00 to 1.05 of the package source in all nine. An earlier run of five of them on the same builds gave 1.00 to 1.06.
 - Tied cases: 0.56 to 0.94 of the package source's time, and 0.40 to 0.80 of the Nov 6 time. No case is slower than the Nov 6 patch any more; before, `grid-cloud-4-8192` was.
 - Every needed vertex is retained in 12 of the 15 tied cases, against 3 before.
 
@@ -90,7 +90,7 @@ The 15 tied cases (`tied-comparison.csv`; seconds are user CPU of the native rou
 
 Where it does not help: with a large span and many vertices (three `spike-cloud` cases, span 0.2) the cap is still reached, so the bytes stay the same; the cap then holds 4 to 5 times more vertices and the time falls by 12 to 22%.
 
-What it costs: 58 more physical source lines including the sparse-retention modification notices, and 0 to 5% more time on the ordinary cases, where every vertex was retained already. That number is from a busy machine and needs a quiet rerun before the change is taken into the package source.
+What it costs: 58 more physical source lines including the sparse-retention modification notices, and 0 to 5% more time on the ordinary cases, where every vertex was retained already. Rerun on a quiet machine before adopting this change in the package source.
 
 The experiment times the Nov 6 patch on the tied inputs; `docs/figures/result/r-tied.R` measures R on all of them.
 

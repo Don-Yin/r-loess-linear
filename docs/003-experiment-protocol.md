@@ -16,6 +16,14 @@ this applies the patch to a copy, builds it, runs the 275 checks and the timing,
 4. a change that is slower, or cannot stay identical, is a result: record it and stop
 5. an experiment changes only its own folder; shared code lives in `shared/harness/`
 
+## measurement
+
+the [notebook](005-compare.ipynb) measures R and the builds over N with [atime](https://github.com/tdhock/atime).
+
+memory is the native bytes a call requests. atime's kilobytes panel counts R's allocator instead, so the two do not agree.
+
+the scripts in `docs/figures/` need a local Python helper outside this repository; the repository includes the images.
+
 ## where things are
 
 | folder | holds |
@@ -23,7 +31,7 @@ this applies the patch to a copy, builds it, runs the 275 checks and the timing,
 | `shared/reference-r/` | unchanged R-devel r90840 sources: base for source line counts |
 | `shared/reference-nov6/` | R-devel r90840 plus the public cache patch: timing and exactness reference |
 | `shared/baseline/` | the linear-memory prototype, patched only in private build copies |
-| `shared/harness/` | build, checks, `speed.R` and `memory.R`, the same for every experiment |
+| `shared/harness/` | build, checks, `speed.R` and `memory.R` |
 | `experiments/exp_NNN_<slug>/` | the patch, `run.R` and a README with the figures and every number |
 
 [Source provenance](source-provenance.md) fixes the R revision, original file URLs, public cache patch and subsequent changes. [Licences](licences.md) distinguishes the source-code terms from the R logo's terms.

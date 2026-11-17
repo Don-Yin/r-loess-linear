@@ -8,7 +8,7 @@ main <- function(root, profile = TRUE) {
 }
 
 # source() never starts work or profiling; only `Rscript run.R` does.
-# Rprof here covers the orchestration; each worker process writes its own profile beside it.
+# Rprof covers the orchestration; each worker process writes its own profile beside it.
 if (sys.nframe() == 0L) {
   args <- commandArgs(trailingOnly = TRUE)
   unknown <- setdiff(args, "--no-profile")

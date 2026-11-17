@@ -6,9 +6,9 @@ How much package source can be removed without slowing ordinary predictions, and
 
 ## result
 
-`deletions_only` removes unused or redundant package code: unused routines (`a-unused`), unrelated declarations (`b-header`), fitting entries (`c-fit-only`), the duplicate direct predictor (`k-direct-delegate`), and response-solving code left unreachable by those deletions (`o-dependent-cleanup`). It saves **1,225 physical lines** and preserves the common-case time here. The project package is unchanged.
+`deletions_only` removes unused or redundant package code: unused routines (`a-unused`), unrelated declarations (`b-header`), fitting entries (`c-fit-only`), the duplicate direct predictor (`k-direct-delegate`), and response-solving code left unreachable by those deletions (`o-dependent-cleanup`). It saves **1,225 physical lines** and preserves the common-case time. The project package is unchanged.
 
-`reduced` also unifies geometry plans, shares design-row expressions, uses existing BLAS vector updates and delegates fitted values to public stats prediction. It saves another 239 lines, but its one-predictor cases are 2.00 to 3.88 times slower than the package. It remains here only as the requested size-versus-speed comparison, not a usable package-source replacement.
+`reduced` also unifies geometry plans, shares design-row expressions, uses existing BLAS vector updates and delegates fitted values to public stats prediction. It saves another 239 lines, but its one-predictor cases are 2.00 to 3.88 times slower than the package. It is the size-versus-speed comparison, not a usable package-source replacement.
 
 | quantity or timed input | package | deletions_only | reduced | R |
 |---|---:|---:|---:|---:|
@@ -20,9 +20,9 @@ How much package source can be removed without slowing ordinary predictions, and
 | tied grid, four predictors, 8,192 observations; native | 1.490 s | 1.568 s | 2.450 s | 1.705 s |
 | native bytes, one predictor, 45,000 observations | 15,701,128 | 15,701,128 | 15,701,128 | 20,254,860,600 |
 
-![R against the deletion-only package source with one predictor and N = 45,000](../../docs/assets/exp_007-result.png)
+![R and the deletion-only package source with one predictor and N = 45,000](../../docs/assets/exp_007-result.png)
 
-The filled circle marked 7 is `deletions_only`, the primary build; the outlined circle is `reduced`, with the additional reductions. The right panel enlarges the grey near-zero range; both axes are linear.
+The filled circle 7 is `deletions_only`; the outlined circle is `reduced`.
 
 Both variants pass 275/275 shared comparisons at the default retention cap and at cap zero. The unchanged `tests/predict-se.R` passes 324 prediction comparisons plus the invalid-object error comparison for each variant at each cap. All nine ordinary and fifteen tied native inputs are strictly identical to R, including warnings and NaN bit patterns. Eight tied public predictions stop with the same error as R; their native variances are still compared. Requested standard-error bytes match the package on all 24 inputs.
 
@@ -30,12 +30,12 @@ Both variants pass 275/275 shared comparisons at the default retention cap and a
 
 Each item below is added alone to `deletions_only`, then timed on the three one-predictor cases. Ratios are against `deletions_only`; each call is batched twenty times over nine interleaved rounds.
 
-- `d-unified-plan`, using the general geometry plan in one dimension: **1.88 to 3.94 times**. This is the main slowdown.
-- `p-canonical-ifit`, obtaining fitted values through public stats prediction: **1.04 to 1.18 times**. It adds a smaller cost.
+- `d-unified-plan`, using the general geometry plan in one dimension: **1.88 to 3.94 times**.
+- `p-canonical-ifit`, obtaining fitted values through public stats prediction: **1.04 to 1.18 times**.
 - `e-shared-features`, one function for production and reconstructed design rows: **0.994 to 1.056 times**.
 - `g-blas-axpy`, three vector updates through the already-linked BLAS library: **0.990 to 1.015 times**. BLAS is the basic linear algebra library.
 
-The five deletion stages show no material one-predictor penalty: their cumulative times stay within about two percent of the package. They are not cost-free everywhere. On the four-predictor tied grid, the final cleanup `o-dependent-cleanup` takes 1.437 s after 1.405 s before it, a 2.3 percent increase in a five-round follow-up. The main comparison above has a 5.2 percent difference between `deletions_only` and the package on that input. Short timings vary on this shared machine; raw rounds are retained.
+The five deletion stages show no material one-predictor penalty: their cumulative times stay within about two percent of the package. On the four-predictor tied grid, the final cleanup `o-dependent-cleanup` takes 1.437 s after 1.405 s before it, a 2.3 percent increase in a five-round follow-up. The main comparison above has a 5.2 percent difference between `deletions_only` and the package on that input. Short timings vary on this shared machine; raw rounds are retained.
 
 ### the rejected arithmetic reduction
 
@@ -62,7 +62,7 @@ Use the project's R and C/Fortran toolchain. The entry builds both variants and 
 
 `patches/deletions-only.patch` and `variant.patch` apply independently to copies of the current package. `patches/add-*.patch` apply individually to `deletions_only` and exist only to attribute the four excluded changes' costs. No patch is applied to the project package.
 
-`shared/harness/` supplies the same nine ordinary and fifteen tied inputs as the other experiments. The nineteen historical comparisons use `shared/reference-nov6/`; the other 256 compare with installed R. `shared/reference-r/` supplies the original R line-count reference.
+`shared/harness/` supplies the same nine ordinary and fifteen tied inputs as the other experiments. The nineteen historical comparisons use `shared/reference-nov6/`; the other 256 compare with installed R. `shared/reference-r/` supplies the R line-count reference.
 
 All timed package methods use their own source R wrapper bound to their own installed native library, so they can run in alternating order in one R process. Namespace checks and package tests load each real installed package in its own process. Timings are median user CPU seconds: five rounds for ordinary inputs with more than 5,000 observations, nine for other ordinary inputs and three for tied native inputs. The four additions use nine rounds of twenty calls. The separate deletion-stage follow-up uses the same batching for ordinary cases and five native rounds for the tied grid.
 
@@ -70,7 +70,7 @@ Memory probes are separate builds. Their outputs must match every uninstrumented
 
 ### line-count scope
 
-The physical counts include copyright and modification notices. Against original R, `deletions_only` is +1,277 / −1,748 source lines and `reduced` is +1,187 / −1,896 (`lines-against-r.csv: variant, part=source, added/removed`). The package itself is +1,333 / −576 under this wrapper-mapping scope.
+The physical counts include copyright and modification notices. Against R, `deletions_only` is +1,277 / −1,748 source lines and `reduced` is +1,187 / −1,896 (`lines-against-r.csv: variant, part=source, added/removed`). The package itself is +1,333 / −576 under this wrapper-mapping scope.
 
 `source-lines.csv` includes native sources, headers, registration, Makevars, `R/predict-se.R` and all copyright notices, with a `variant` column. `summary.json: variants.<name>.source_lines` records changes from the package.
 
@@ -79,7 +79,7 @@ The physical counts include copyright and modification notices. Against original
 ### outputs
 
 - `.results/json/summary.json`: both variants, cap checks, timing ranges, additions and counting scope; `reduction-scope.json` identifies the selected and rejected candidates.
-- `.results/tables/source-lines.csv`, `lines-against-r.csv`: physical lines and original-R differences.
+- `.results/tables/source-lines.csv`, `lines-against-r.csv`: physical lines and differences against R.
 - `.results/tables/checks-<variant>-default.csv`, `checks-<variant>-cap-0.csv`, `checks-unchanged-native-<variant>.csv`; `.results/json/tests-<variant>-<cap>.json`: complete shared and installed-package checks.
 - `.results/tables/ordinary-timing.csv`, `tied-timing.csv`, `timing-rounds.csv`: simultaneous package, two-variant and R comparisons. `source_s` is the package time.
 - `.results/tables/addition-timing.csv`, `addition-rounds.csv`: one-at-a-time additions; `deletion-stages.csv`, `deletion-stage-rounds.csv`: the five deletion stages.

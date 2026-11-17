@@ -10,7 +10,7 @@ main <- function(root, profile = TRUE) {
   worker(root, file.path(root, "src", "modules", "memory-sweep.R"), c(file.path(variant_work(root), "src"), table), "memory", profile)
   summary$memory <- utils::read.csv(table)
 
-  # R's own predict(se = TRUE), unpatched, in the nine timing cases
+  # R's predict(se = TRUE), in the nine timing cases
   table <- result_path(root, "tables", "r-timing.csv")
   worker(root, file.path(root, "src", "modules", "r-timing.R"), table, "r-timing", profile)
   summary$r_timing <- utils::read.csv(table)
@@ -19,7 +19,7 @@ main <- function(root, profile = TRUE) {
 }
 
 # source() never starts work or profiling; only `Rscript run.R` does.
-# Rprof here covers the orchestration; each worker process writes its own profile beside it.
+# Rprof covers the orchestration; each worker process writes its own profile beside it.
 if (sys.nframe() == 0L) {
   args <- commandArgs(trailingOnly = TRUE)
   unknown <- setdiff(args, "--no-profile")

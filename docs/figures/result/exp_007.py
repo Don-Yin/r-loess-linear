@@ -28,8 +28,8 @@ def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
     original = r_point(timing["r_s"], size["r_native_bytes"])
     builds = [build_point(label, 7, colour, timing[f"{variant}_s"], size[f"{variant}_native_bytes"], filled=filled)
               for variant, label, colour, filled in (
-                  ("deletions_only", "deletions only", DEFAULT_BLUE, True),
-                  ("reduced", "additional reductions", BEFORE_RED, False))]
+                  ("deletions_only", "deletions", DEFAULT_BLUE, True),
+                  ("reduced", "+ reductions", BEFORE_RED, False))]
     zoom = (max(point["bytes"] for point in builds) * 1.35, max(point["seconds"] for point in builds) * 1.5)
     fig, record = absolute_figure([original, *builds], zoom=zoom, target_width_cm=target_width_cm)
     return fig, {**record, "scientific_job": "compare deletion-only source and further reductions with original R",

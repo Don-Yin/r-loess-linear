@@ -1,4 +1,4 @@
-# Thin entry for the inverse-neighbor cache comparison with original R.
+# Thin entry for the inverse-neighbor cache comparison with R.
 
 main <- function(root, profile = TRUE) {
   for (file in c("common.R", "variant.R", "matrix.R")) source(file.path(root, "..", "..", "shared", "harness", file))

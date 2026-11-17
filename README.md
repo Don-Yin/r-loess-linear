@@ -4,9 +4,9 @@ exact standard errors for R's `loess` with memory that grows linearly with the n
 
 ## experiments
 
-at N = 45,000 the package requests 1,290× less memory than original R and runs 573× faster, with the same output bit for bit.
+at N = 45,000 the package requests 1,290× less memory than R and runs 573× faster, with the same output bit for bit.
 
-<a href="docs/assets/exp_005-result.png"><img alt="memory requested against time for original R and the package source at N = 45,000" src="docs/assets/exp_005-result.png" width="600"></a>
+<a href="docs/assets/exp_005-result.png"><img alt="R and this package at N = 45,000" src="docs/assets/exp_005-result.png" width="600"></a>
 
 [all experiments](experiments/README.md)
 
@@ -32,7 +32,7 @@ the [notebook](docs/005-compare.ipynb) does this over N and repeats the R experi
 
 ## use
 
-one function, on a fit from R's own `loess()`:
+on a fit from R's `loess()`:
 
 ```r
 x <- runif(2000, -3, 3); y <- sin(x) + rnorm(2000, sd = 0.35)

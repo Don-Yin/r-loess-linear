@@ -1,6 +1,6 @@
 # Memory: bytes each predict call requests. A build reports its own native request through its probes after
 # the call; R and the Nov 6 patch request a workspace fixed by their sources (loess_workspace in loessc.c),
-# computed here. source() this file; it defines functions only.
+# computed. source() this file; it defines functions only.
 
 # The build's probe readings after its last call, by name; NA where the build has no probes.
 probe_values <- function(routines) {

@@ -2,7 +2,7 @@
 
 ## question
 
-Which parts of the prototype can go without changing a single output? Eight changes, each applied alone to `shared/baseline/` and measured alone.
+Which parts of the prototype can go without changing a single output? Eight changes, each applied to `shared/baseline/` and measured alone.
 
 ## result
 
@@ -12,9 +12,9 @@ All eight are identical in 275/275 checks (256 against R, 19 against the Nov 6 p
 |---|---:|---:|---|---:|---:|---|
 | one predictor, N = 45,000, the 8 builds | 15.7 to 38.7 MB | 20.3 GB | **523 to 1,290× less** | 0.035 to 0.057 s | 21.8 s | **382 to 622× faster** |
 
-![memory requested against time for R and the eight builds at N = 45,000](../../docs/assets/exp_003-result.png)
+![R and the eight builds at N = 45,000](../../docs/assets/exp_003-result.png)
 
-![time and memory of R and the eight builds over N, measured with atime](../../docs/assets/exp_003-atime.png)
+![R and the eight builds over N, measured with atime](../../docs/assets/exp_003-atime.png)
 
 | change | what it does | source lines against R | verdict |
 |---|---|---:|---|
@@ -27,7 +27,7 @@ All eight are identical in 275/275 checks (256 against R, 19 against the Nov 6 p
 | `single_vertex_fit` | vertex fit merged into `ehg127` | +2,006 / −60 | kept |
 | `zero_radius_retained_first` | zero-radius vertices get the first retention slots | +2,191 / −38 | kept |
 
-The unchanged prototype is +2,160 / −38 source lines against original R. The kept ones together are `exp_005_package_source`. [how to read the figures](../../docs/004-results.md#how-to-read-the-figures)
+The unchanged prototype is +2,160 / −38 source lines against R. The kept ones together are `exp_005_package_source`. [how to read the figures](../../docs/004-results.md#how-to-read-the-figures)
 
 ## how to run
 
@@ -49,13 +49,13 @@ Rscript experiments/exp_003_reductions/run.R
 
 ### outputs
 
-- `.results/tables/reductions.csv`: one row per variant (shown below)
+- `.results/tables/reductions.csv`: one row per variant
 - `.results/tables/<name>-*.csv`, `.results/json/<name>-*.json`: the cases behind each row
 - `.results/logs/`, `.results/profile/`: logs, and one profile for the entry and each R worker
 
 ### findings
 
-Exactness, bytes and extra checks come from `.results/tables/reductions.csv`. "identical" is the 275 shared cases. Line counts come from `lines-against-r.csv: variant, part=source, added/removed`; they count physical lines against original R, include copyright and modification notices, and exclude the standalone `register.c` adapter. Bytes are the native request at N = 45,000 with one predictor. "extra" counts the variant's own comparisons (`extra_identical`/`extra_cases`, listed in `extra_check_counts`).
+Exactness, bytes and extra checks come from `.results/tables/reductions.csv`. "identical" is the 275 shared cases. Line counts come from `lines-against-r.csv: variant, part=source, added/removed`; they count physical lines against R, include copyright and modification notices, and exclude the standalone `register.c` adapter. Bytes are the native request at N = 45,000 with one predictor. "extra" counts the variant's own comparisons (`extra_identical`/`extra_cases`, listed in `extra_check_counts`).
 
 | variant | identical | lines | bytes | extra |
 |---|---:|---:|---:|---:|

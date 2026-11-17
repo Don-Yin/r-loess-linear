@@ -1,5 +1,5 @@
 # worker: Rscript <this file> <variant dir> <output csv> [profile path]
-# Native bytes of one predict(se = TRUE) call over N in Toby's setup, against the workspace R's own predict
+# Native bytes of one predict(se = TRUE) call over N in Toby's setup, against the workspace R's predict
 # requests. The sweep includes the last N at which R runs and the first at which it stops.
 args <- commandArgs(TRUE); dir <- args[1]; out <- args[2]
 self <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
@@ -14,7 +14,7 @@ rows <- lapply(seq_along(ns), function(i) {
   n <- ns[i]; step(i, sprintf("N = %.0f", n)); data <- toby_data(n)
   b <- new$predict.loess(data$fit, data$nd, se = TRUE)
 
-  # R's own predict is compared where it runs in a few seconds.
+  # R's predict is compared where it runs in a few seconds.
   same_as_r <- if (n <= 20000) same(stats::predict(data$fit, data$nd, se = TRUE), b) else NA
 
   # nv = 0: R's C workspace alone, without the N by nv cache that only the Nov 6 patch adds.

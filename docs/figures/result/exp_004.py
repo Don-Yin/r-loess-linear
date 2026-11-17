@@ -13,7 +13,7 @@ from result_data import (
 
 TABLES = "experiments/exp_004_worst_case/.results/tables"
 CASE = "zero-radius-1-8192-128"
-CAPS = {0: "cap 0", 65536: "64 KiB", 67108864: "64 MiB"}
+CAPS = {0: "0", 65536: "64 KiB", 67108864: "64 MiB"}
 DEFAULT_CAP = 67108864
 SMALL_ORANGE = "#ee7733"
 COLUMNS = ["id", "public_error", "baseline_s", "baseline_native_bytes"]
@@ -28,10 +28,10 @@ def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
             raise ValueError(f"{path}: expected one {CASE} row where R stops with an error")
         rows[cap] = found[0]
         sources.append(source_record(path, COLUMNS))
-    builds = {cap: build_point("prototype, default cap 64 MiB" if cap == DEFAULT_CAP else "prototype, forced small cap",
-                               4, DEFAULT_BLUE if cap == DEFAULT_CAP else SMALL_ORANGE, row["baseline_s"],
-                               row["baseline_native_bytes"], name=None if cap == 65536 else
-                               ("cap 0 and 64 KiB" if cap == 0 else "64 MiB"))
+    builds = {cap: build_point(CAPS[cap] if cap == DEFAULT_CAP else "cap", 4,
+                               DEFAULT_BLUE if cap == DEFAULT_CAP else SMALL_ORANGE,
+                               row["baseline_s"], row["baseline_native_bytes"],
+                               name=None if cap == DEFAULT_CAP else CAPS[cap])
               for cap, row in rows.items()}
     r, r_source = r_on_tied(CASE)
     zoom = (max(p["bytes"] for p in builds.values()) * 1.35, max(p["seconds"] for p in builds.values()) * 1.15)

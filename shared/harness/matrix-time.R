@@ -1,5 +1,5 @@
 # worker: Rscript <this file> <variant dir> <original R dir> <output csv> <cache|actual-vertices> [profile path]
-# The common timing cases, each compared only with original R; bytes follow the allocation formulas.
+# The common timing cases, each compared only with R; bytes follow the allocation formulas.
 
 args <- commandArgs(TRUE); dir <- args[1]; ref <- args[2]; out <- args[3]; kind <- args[4]
 if (!kind %in% c("cache", "actual-vertices")) stop("unknown matrix variant: ", kind)

@@ -6,7 +6,7 @@ Do the kept changes of `exp_003_reductions` still give identical output together
 
 ## result
 
-Identical in 275/275 checks (256 against R, 19 against the Nov 6 patch), and faster than R on all 15 tied inputs. On 9 of them it requests 6 to 20 times more memory than R. This is the package source.
+Identical in 275/275 checks (256 against R, 19 against the Nov 6 patch), and faster than R on all 15 tied inputs. On 9 of them it requests 6 to 20 times more memory than R.
 
 | input | memory | R | | time | R | |
 |---|---:|---:|---|---:|---:|---|
@@ -14,19 +14,19 @@ Identical in 275/275 checks (256 against R, 19 against the Nov 6 patch), and fas
 | tied grid `grid-cloud-3-8192` | 87.0 MB | 5.7 MB | **15× more** | 0.62 s | 1.26 s | **2.0× faster** |
 | tied grid `grid-cloud-4-8192` | 116.8 MB | 7.2 MB | **16× more** | 1.35 s | 1.59 s | **1.2× faster** |
 
-On the tied grids a neighbourhood has 15 points, so R's own workspace is small. R was timed in a separate run, so its time ratios are rough.
+On the tied grids a neighbourhood has 15 points, so R's workspace is small. R was timed in a separate run, so its time ratios are rough.
 
 One predictor, N = 45,000:
 
-![memory requested against time for R and the package source at N = 45,000](../../docs/assets/exp_005-result.png)
+![R and the package source at N = 45,000](../../docs/assets/exp_005-result.png)
 
 The 15 tied inputs, against R:
 
-![time and memory of the package source on the 15 tied inputs, as multiples of R's](../../docs/assets/exp_005-tied.png)
+![R and the package source on the 15 tied inputs](../../docs/assets/exp_005-tied.png)
 
 `grid-cloud-3` over N:
 
-![time and memory of R and the package source over N, measured with atime](../../docs/assets/exp_005-atime.png)
+![R and the package source over N, measured with atime](../../docs/assets/exp_005-atime.png)
 
 `exp_006_sparse_retention` lowers the memory on the tied inputs. [how to read the figures](../../docs/004-results.md#how-to-read-the-figures)
 
@@ -41,7 +41,7 @@ Rscript experiments/exp_005_package_source/run.R
 
 ### inputs
 
-`shared/baseline/`, `shared/reference-nov6/`, `shared/harness/` (tied cases in `shared/harness/tied.R`), and the two patches. `variant.patch` is the package source: the package's `src/` is `shared/baseline/` with this patch. `patches/stack.patch` is the same without the retention change and is here only as the "before" side. A zero-radius vertex is one whose neighbourhood has all its observations at the same point.
+`shared/baseline/`, `shared/reference-nov6/`, `shared/harness/` (tied cases in `shared/harness/tied.R`), and the two patches. `variant.patch` is the package source: the package's `src/` is `shared/baseline/` with this patch. `patches/stack.patch` is the same without the retention change: the "before" side. A zero-radius vertex is one whose neighbourhood has all its observations at the same point.
 
 `--no-profile` turns profiling off. Both builds use the source defaults, with no flags. The tied measurements use separate copies built with the test probes; the probes are not in the normal build. The run takes about 20 minutes.
 
@@ -56,7 +56,7 @@ Rscript experiments/exp_005_package_source/run.R
 ### findings
 
 - Both builds: 275/275 shared cases identical with the source defaults, and 275/275 with nothing retained (`summary.json: checks`, `priority_on_stack.shared_control_checks`, `shared_stack_checks`, `shared_stack_control_checks`).
-- Physical source lines against original R: +1,253 / −59 for the package source and +1,223 / −60 without the retention change (`lines-against-r.csv: variant=package/stack, part=source, added/removed`). The standalone `register.c` adapter is separate; copyright and modification notices are included.
+- Physical source lines against R: +1,253 / −59 for the package source and +1,223 / −60 without the retention change (`lines-against-r.csv: variant=package/stack, part=source, added/removed`). The standalone `register.c` adapter is separate; copyright and modification notices are included.
 - Tied inputs: 15/15 identical in both builds, 6/6 controls. Cases that leave a zero-radius vertex unretained at the default cap: 5 before, 0 after. The requested native bytes are the same in every pair (`summary.json: priority_on_stack.metrics`).
 
 The 5 slow cases (`tied-comparison.csv`; seconds are user CPU of the native routine, ratios are against Nov 6):

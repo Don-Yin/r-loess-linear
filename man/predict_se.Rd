@@ -2,7 +2,7 @@
 \alias{predict_se}
 \title{Loess Predictions with Standard Errors}
 \description{
-Compute predictions and pointwise standard errors from an existing
+Compute predictions and pointwise standard errors from a
 \code{\link[stats]{loess}} fit, with the same result as
 \code{\link[stats]{predict.loess}(object, newdata, se = TRUE)}.
 }
@@ -19,7 +19,7 @@ predict_se(object, newdata = NULL)
 The interpolation surface stores compact local fit records and reconstructs
 coefficient blocks in the original arithmetic order, rather than reserving
 the quadratic standard-error workspace used by R. Retained coefficients
-are limited to 64 MiB. The fit itself is computed by \code{stats::loess};
+are limited to 64 MiB. The fit is computed by \code{stats::loess};
 this package does not replace \code{loess} or register a prediction method.
 The direct surface retains R's standard calculation and its workspace.
 

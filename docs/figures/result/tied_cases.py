@@ -23,8 +23,8 @@ from result_data import (
 )
 
 R_BLUE = "#276dc3"
-TIME = {"heading": "time", "xlabel": "time (R = 1)", "r": "seconds"}
-MEMORY = {"heading": "memory", "xlabel": "memory requested (R = 1)", "r": "bytes"}
+TIME = {"heading": "time", "r": "seconds"}
+MEMORY = {"heading": "requested memory", "r": "bytes"}
 
 
 def tied_cases_figure(table, build, panels, *, target_width_cm):
@@ -64,11 +64,10 @@ def tied_cases_figure(table, build, panels, *, target_width_cm):
                 ax.plot(value, place, linestyle="none", zorder=3, **style)
         ax.xaxis.set_major_locator(MaxNLocator(4, min_n_ticks=3))
         ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: "0" if value == 0 else f"{value:g}×"))
-        ax.set_xlabel(panel["xlabel"], fontsize=9)
-        text = panel["heading"] + (f", below {below:g}× enlarged" if below else "")
-        heading = ax.text(0, 1.015, text, transform=ax.transAxes, fontsize=9, fontweight="bold", ha="left", va="bottom")
-        tag_artist(heading, semantic_role="column_heading")
-        plotted.append({"heading": text, "column": panel["column"], "r": panel["r"], "x_max": top,
+        if ax is axes[0] or panel["heading"] != panels[0]["heading"]:
+            ax.set_xlabel(panel["heading"], fontsize=9)
+        plotted.append({"heading": panel["heading"], "below": below,
+                        "column": panel["column"], "r": panel["r"], "x_max": top,
                         "values": dict(zip(names, values, strict=True))})
 
     # the inputs' names, left-aligned in one column beside the left panel
@@ -84,7 +83,7 @@ def tied_cases_figure(table, build, panels, *, target_width_cm):
 
     handles: list = [OffsetImage(R_LOGO),
                      tuple(Line2D([], [], linestyle="none", **style) for style in _marker_styles(entry, 0.8))]
-    fig.legend(handles, ["R (unpatched), the blue line at 1", label],
+    fig.legend(handles, ["= 1", label],
                handler_map={tuple: HandlerTuple(ndivide=1), OffsetImage: _LogoHandler()}, loc="upper center",
                bbox_to_anchor=(0.5, 0.995), ncol=2, fontsize=9, handlelength=1.2, handletextpad=0.4,
                columnspacing=1.4, borderaxespad=0, frameon=False)

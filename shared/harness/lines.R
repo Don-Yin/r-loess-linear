@@ -1,4 +1,4 @@
-# Print source, standalone build-adapter and total line changes against original R for each build.
+# Print source, standalone build-adapter and total line changes against R for each build.
 
 main <- function(root) {
   for (file in c("common.R", "variant.R")) source(file.path(root, "shared", "harness", file))

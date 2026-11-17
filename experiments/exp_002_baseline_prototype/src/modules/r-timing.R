@@ -1,5 +1,5 @@
 # worker: Rscript <this file> <output csv> [profile path]
-# User CPU of R's own predict(se = TRUE), unpatched, in the nine timing cases, with the workspace R requests.
+# User CPU of R's predict(se = TRUE), in the nine timing cases, with the workspace R requests.
 args <- commandArgs(TRUE); out <- args[1]
 self <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
 harness <- normalizePath(file.path(dirname(gsub("~+~", " ", self, fixed = TRUE)), "..", "..", "..", "..", "shared", "harness"))

@@ -1,4 +1,4 @@
-"""Fetch the pinned source and record its differences from the original R core."""
+"""Fetch the pinned source and record its differences from the R core."""
 
 from __future__ import annotations
 

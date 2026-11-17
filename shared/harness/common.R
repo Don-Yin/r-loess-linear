@@ -98,7 +98,7 @@ native_se <- function(env, X, y, nd, cs, linear) {
   if (linear) result else rowSums(matrix(result^2, m, n))
 }
 
-# The same variances from unpatched R's own entry, which takes one argument fewer than the builds'.
+# Variances from R's entry, which takes one argument fewer than the builds'.
 r_native_se <- function(X, y, nd, cs) {
   X <- as.matrix(X); nd <- as.matrix(nd); n <- nrow(X); d <- ncol(X); m <- nrow(nd)
   L <- .C(stats:::C_loess_ise, as.double(y), as.double(X), as.double(nd), rep(1, n), as.double(cs$span), 2L,

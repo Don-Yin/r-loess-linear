@@ -1,6 +1,6 @@
 # worker: Rscript <this file> <baseline dir> <variant dir> <geometry dir> <checks csv> <geometry csv> <timing csv> [profile path]
 # Compare flagged native calls with the unchanged prototype and search real tree geometry.
-# `cell` here is the value the native entry takes, span * cell in the terms of loess.control().
+# `cell` is the value the native entry takes, span * cell in the terms of loess.control().
 args <- commandArgs(TRUE)
 self <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
 harness <- normalizePath(file.path(dirname(gsub("~+~", " ", self, fixed = TRUE)), "..", "..", "..", "..", "shared", "harness"))

@@ -1,4 +1,4 @@
-# Thin entry for actual-vertex coefficient storage compared with original R.
+# Thin entry for actual-vertex coefficient storage compared with R.
 
 main <- function(root, profile = TRUE) {
   for (file in c("common.R", "variant.R", "matrix.R")) source(file.path(root, "..", "..", "shared", "harness", file))

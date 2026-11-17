@@ -69,7 +69,7 @@ prepare_variant <- function(exp_dir, dir, base = "baseline", patch = file.path(e
   invisible(dir)
 }
 
-# Lines added and removed against original R, including the separate register.c build adapter.
+# Lines added and removed against R, including the separate register.c build adapter.
 
 line_count <- function(dir, ref) {
   files <- stats::setNames(list(), character())

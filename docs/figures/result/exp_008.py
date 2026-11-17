@@ -35,15 +35,14 @@ def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
                 row[column] = float(row[column])
             except ValueError as error:
                 raise ValueError(f"{SUMMARY}: invalid {column}={row[column]!r} for {row['build']}") from error
-    original = logo_point("skmisc (unpatched)", imread(ROOT / PYTHON_LOGO),
+    original = logo_point("skmisc", imread(ROOT / PYTHON_LOGO),
                           *(measured["unpatched"][column] for column in COLUMNS))
     builds = [build_point(label, 8, colour, *(measured[build][column] for column in COLUMNS), filled=filled)
               for build, label, colour, filled in (
-                  ("cache", "cache only", BEFORE_RED, False),
-                  ("actual", "cache + actual vertices", DEFAULT_BLUE, True))]
+                  ("cache", "cache", BEFORE_RED, False),
+                  ("actual", "+ actual vertices", DEFAULT_BLUE, True))]
     zoom = (max(point["bytes"] for point in builds) * 1.08, max(point["seconds"] for point in builds) * 1.5)
-    fig, record = absolute_figure([original, *builds], zoom=zoom, zoom_heading="fast range, enlarged",
-                                 target_width_cm=target_width_cm)
+    fig, record = absolute_figure([original, *builds], zoom=zoom, target_width_cm=target_width_cm)
     return fig, {**record, "scientific_job": "compare unpatched skmisc with the cache and actual-vertex ports",
                  "input": HEADLINE_TEXT,
                  "sources": [source_record(SUMMARY, ["build", "n", "status", "replicates", *COLUMNS]),

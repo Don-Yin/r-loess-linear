@@ -6,34 +6,34 @@ Does the actual-vertex coefficient storage from `exp_001_actual_vertices` transf
 
 ## result
 
-The R patch needs porting, not direct application. The executable Fortran matches original R after removing comments and mapping R's `loesswarn` diagnostic name to scikit-misc's `ehg182`. The C allocation and error interfaces differ, and scikit-misc does not already contain the cache that `exp_001` assumes.
+The R patch needs porting, not direct application. The executable Fortran matches R after removing comments and mapping R's `loesswarn` diagnostic name to scikit-misc's `ehg182`. The C allocation and error interfaces differ, and scikit-misc does not already contain the cache that `exp_001` assumes.
 
-The experiment builds the same pinned scikit-misc source three ways: unchanged (`unpatched`), inverse-neighbor cache only (`cache`), then cache plus actual-vertex storage (`actual`). The cache reuses each neighbor's position instead of searching for it repeatedly. Actual-vertex storage allocates coefficients for the vertices the tree contains rather than its maximum capacity.
+The experiment builds pinned scikit-misc source three ways: unchanged (`unpatched`), inverse-neighbor cache only (`cache`), then cache plus actual-vertex storage (`actual`). The cache reuses each neighbor's position instead of searching for it repeatedly. Actual-vertex storage allocates coefficients for the vertices the tree contains rather than its maximum capacity.
 
 All 695 array/scalar checks are bit for bit identical across the Python changes and repeated processes. Against R, all 255 array comparisons are close but not bitwise identical: the maximum absolute differences are 1.059e-14 for training fits, 1.057e-14 for query fits and 1.874e-16 for standard errors.
 
 One predictor, N = 45,000, 80 query points, span 0.5, and 17 tree vertices:
 
-| quantity | unpatched | cache only | cache + actual vertices |
+| quantity | skmisc | cache only | cache + actual vertices |
 |---|---:|---:|---:|
 | prediction wall seconds | 22.746587 | 0.170311 | 0.087046 |
 | prediction user CPU seconds | 22.504745 | 0.102398 | 0.084385 |
 | native bytes requested | 20,254,860,600 | 20,257,920,600 | 15,570,600 |
 | dense influence matrix bytes | 28,800,000 | 28,800,000 | 28,800,000 |
 
-The cache accounts for the large time reduction while retaining the quadratic coefficient reservation. Actual-vertex storage reduces the cache build's native request by about 1,301 times and gives a further time reduction here. The matrix is unchanged.
+The cache accounts for the large time reduction while retaining the quadratic coefficient reservation. Actual-vertex storage reduces the cache build's native request by about 1,301 times and gives a further time reduction.
 
-![Native bytes requested against prediction user CPU time for unpatched skmisc and both patched builds at N = 45,000](../../docs/assets/exp_008-result.png)
+![skmisc and both builds at N = 45,000](../../docs/assets/exp_008-result.png)
 
-The Python mark identifies unpatched skmisc. The circles carry experiment number 8: the outlined circle is cache-only and the filled circle adds actual-vertex storage. Both axes are linear. The right panel enlarges the grey fast-time range and includes both patched builds. Native bytes exclude the unchanged dense influence matrix; they are allocation requests, not resident memory.
+The Python mark is skmisc; circle 8 is cache-only when outlined and cache + actual vertices when filled.
 
-| N | unpatched / cache-only prediction | actual-vertex prediction | original R standard errors |
+| N | skmisc / cache-only prediction | actual-vertex prediction | R standard errors |
 |---:|---|---|---|
 | 46,336 | both succeed | succeeds; 16,032,856 native bytes | succeed |
 | 46,337 | both terminate with SIGSEGV | succeeds; 16,033,012 native bytes | workspace error |
 | 100,000 | both terminate with SIGSEGV | succeeds in 0.217486 wall seconds; 34,600,600 native bytes | workspace error |
 
-At N = 46,337, unpatched skmisc and cache-only both crash with SIGSEGV; actual-vertex storage succeeds. Each cell has three fresh-process repetitions. SIGSEGV is the native invalid-memory-access signal; it is recorded as return code -11. The two above-limit sizes account for 12 expected crash processes. This covers regular one-predictor interpolation, not tied or worst-case trees, the direct surface or exact-statistics fitting. Fitting and the dense observation-by-query matrix remain; this is not a general linear-memory or end-to-end linear-time result.
+At N = 46,337, skmisc and cache-only both crash with SIGSEGV; actual-vertex storage succeeds. Each cell has three fresh-process repetitions. SIGSEGV is the native invalid-memory-access signal; it is recorded as return code -11. The two above-limit sizes account for 12 expected crash processes. Regular one-predictor interpolation only; [scope](#what-is-not-covered).
 
 ## licences
 
@@ -83,7 +83,7 @@ The file-by-file comparison is `.results/tables/source-comparison.csv`, keyed by
 
 Direct application of `exp_001` fails: `.results/source-diffs/exp001-direct-apply.txt` records the dry run. `cache.patch` ports the difference between the two R references; `actual-vertices.patch` then ports `exp_001`. They retain scikit-misc's allocation and error-status interfaces and do not alter its public call signature. Exact-statistics fitting continues to call the original search path; prediction enables the cache. The second patch separates geometry construction from smoothing, preserves geometry capacity and arithmetic order, and changes only the coefficient arrays' physical vertex stride. Its new allocations are checked and freed explicitly instead of using R's allocator.
 
-Against the pinned unpatched scikit-misc 0.5.3 source, `cache.patch` is +57 / −20 physical lines; applying `cache.patch` then `actual-vertices.patch` gives +161 / −75 (`lines-against-skmisc.csv: variant=cache/actual, added/removed`). Counts include copyright and modification notices. These are final differences in `skmisc/loess/src/loessc.c` and `loessf.f`, not the sum of the two incremental patch sizes.
+Against the pinned scikit-misc 0.5.3 source, `cache.patch` is +57 / −20 physical lines; applying `cache.patch` then `actual-vertices.patch` gives +161 / −75 (`lines-against-skmisc.csv: variant=cache/actual, added/removed`). Counts include copyright and modification notices. These are final differences in `skmisc/loess/src/loessc.c` and `loessf.f`, not the sum of the two incremental patch sizes.
 
 `.results/tables/port-comparison.csv: build, normalized_fortran_equal` checks all three complete Fortran files against their corresponding R targets. C is deliberately ported rather than substituted wholesale.
 

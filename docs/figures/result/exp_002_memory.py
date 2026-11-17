@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import re
 
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import OffsetImage
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 from python_plotting_convention import (  # pyright: ignore[reportMissingImports]
     SINGLE_COLUMN_CM,
@@ -13,7 +15,9 @@ from python_plotting_convention import (  # pyright: ignore[reportMissingImports
 from result_data import (
     BEFORE_RED,
     DEFAULT_BLUE,
+    R_LOGO,
     ROOT,
+    _LogoHandler,
     quiet_axes,
     read_csv,
     source_record,
@@ -51,19 +55,20 @@ def build_figure(*, target_width_cm: float = SINGLE_COLUMN_CM):
     ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:,.0f}"))
     ax.yaxis.set_major_locator(MaxNLocator(5))
     ax.grid(axis="y", color="#d9dfe4", linestyle=":", linewidth=0.6)
-    ax.set_xlabel("observations (N)", fontsize=9)
-    ax.set_ylabel("memory requested (GB)", fontsize=9)
+    ax.set_xlabel("N", fontsize=9)
+    ax.set_ylabel("memory (GB)", fontsize=9)
     fig.legend(
         handles=[
-            Line2D([], [], color=BEFORE_RED, marker="s", markersize=3.2, linewidth=1.2,
-                   label="R's workspace while R runs"),
+            (Line2D([], [], color=BEFORE_RED, marker="s", markersize=3.2, linewidth=1.2), OffsetImage(R_LOGO)),
             Line2D([], [], color=BEFORE_RED, marker="s", markersize=3.2, linewidth=1.2, linestyle="--",
-                   markerfacecolor="white", label=f"past N ≈ {stop_label}, where R stops"),
-            Line2D([], [], color=DEFAULT_BLUE, marker="o", markersize=3.2, linewidth=1.2,
-                   label=f"prototype, {largest['native_bytes'] / MB:.0f} MB at N = {largest['n']:,.0f}"),
+                   markerfacecolor="white"),
+            Line2D([], [], color=DEFAULT_BLUE, marker="o", markersize=3.2, linewidth=1.2),
         ],
+        labels=["", f"stops near {stop_label}",
+                f"prototype, {largest['native_bytes'] / MB:.0f} MB at {largest['n']:,.0f}"],
+        handler_map={tuple: HandlerTuple(ndivide=None), OffsetImage: _LogoHandler()},
         loc="upper center", bbox_to_anchor=(0.5, 0.995), ncol=1, fontsize=9,
-        handlelength=2.2, handletextpad=0.4, labelspacing=0.25, borderaxespad=0, frameon=False,
+        handlelength=3.0, handletextpad=0.4, labelspacing=0.25, borderaxespad=0, frameon=False,
     )
     return fig, {
         "scientific_job": "memory the prototype requests against R's requested workspace over N",

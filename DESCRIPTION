@@ -14,8 +14,8 @@ Authors@R: c(
     person("Robert", "Gentleman", role = "cph"),
     person("Ross", "Ihaka", role = "cph"),
     person("AT&T", role = "cph"))
-Description: Computes predictions and pointwise standard errors from a fit
-    produced by stats::loess(), preserving the results of predict() with
+Description: Computes predictions and pointwise standard errors from
+    stats::loess() fits, preserving the results of predict() with
     se = TRUE. For the interpolation surface, compact local fit records
     and ordered recomputation replace the quadratic native workspace.
     The direct surface retains R's standard calculation. Derived from

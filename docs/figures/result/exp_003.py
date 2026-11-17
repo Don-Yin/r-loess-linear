@@ -18,7 +18,7 @@ REDUCTIONS = f"{TABLES}/reductions.csv"
 # The normal build of this variant has no allocation probe; its bytes come from its test build.
 
 BYTES_FROM_TEST_BUILD = {"probes_out_of_production": "testing-timing.csv"}
-NAMES = {"block_buffer_by_vertex_count": "block buffer", "single_plan_path": "single plan path"}
+NAMES = {"block_buffer_by_vertex_count": "block buffer", "single_plan_path": "single plan"}
 
 
 def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
@@ -33,7 +33,7 @@ def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
         bytes_path = f"{TABLES}/{name}-{BYTES_FROM_TEST_BUILD.get(name, 'timing.csv')}"
         time, size = headline_row(time_path, ("variant_s",)), headline_row(bytes_path, ("native_bytes",))
         is_kept = row["verdict"] == "kept"
-        builds.append(build_point(f"{kept} kept" if is_kept else f"{len(variants) - kept} dropped", 3,
+        builds.append(build_point(f"{kept} kept" if is_kept else "dropped", 3,
                                   KEPT_GREEN if is_kept else DROPPED_PURPLE, time["variant_s"],
                                   size["native_bytes"], filled=is_kept, name=NAMES.get(name)))
         paths += sorted({time_path, bytes_path})

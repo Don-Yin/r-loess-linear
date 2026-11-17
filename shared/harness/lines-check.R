@@ -1,4 +1,4 @@
-# Recount source changes against original R and stop when the experiments/README.md column is stale.
+# Recount source changes against R and stop when the experiments/README.md column is stale.
 
 line_range <- function(values) {
   limits <- range(values)
@@ -40,7 +40,7 @@ check_lines <- function(root, readme = file.path(root, "experiments", "README.md
     variants$exp_007_shorter_source <- "deletions_only"
   }
   split_row <- function(row) trimws(strsplit(row, "|", fixed = TRUE)[[1]])[-1L]
-  # Only the table counted against original R; the Python table counts against scikit-misc.
+  # Only the table counted against R; the Python table counts against scikit-misc.
 
   header <- which(vapply(text, function(line) "source lines against&nbsp;R" %in% split_row(line), NA))
   if (length(header) != 1L) stop("expected one table with a source lines against R column in ", readme)
@@ -71,7 +71,7 @@ check_lines <- function(root, readme = file.path(root, "experiments", "README.md
     }
     message(experiment, ": ", expected)
   }
-  message("README source line column agrees with original-R recount")
+  message("README source line column agrees with R recount")
   invisible(TRUE)
 }
 

@@ -10,7 +10,7 @@ COMPARISON = "experiments/exp_005_package_source/.results/tables/tied-comparison
 
 def build_figure(*, target_width_cm: float = FULL_TEXT_WIDTH_CM):
     fig, kind = tied_cases_figure(
-        COMPARISON, ("package source", 5, DEFAULT_BLUE),
+        COMPARISON, ("this package", "P", DEFAULT_BLUE),
         [{**TIME, "column": "priority_baseline_s"}, {**MEMORY, "column": "priority_baseline_native_bytes"}],
         target_width_cm=target_width_cm)
     return fig, {**kind, "scientific_job": "time and memory of the package source on every tied input, against R",

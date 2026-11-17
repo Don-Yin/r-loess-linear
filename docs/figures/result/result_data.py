@@ -52,9 +52,9 @@ def quiet_axes(ax):
     ax.set_axisbelow(True)
 
 
-# One plot kind for every experiment's result: one input, memory requested
+# One plot kind for every experiment's result: one input, requested memory
 # across and time up, both on plain linear axes in readable units, with the
-# unpatched implementation as its logo and each build as a numbered circle.
+# reference implementation as its logo and each build as a labelled circle.
 # The right panel enlarges the grey box.
 
 DEFAULT_BLUE = "#4477aa"
@@ -106,19 +106,19 @@ def probed_headline_bytes(column):
 
 
 def logo_point(label, image, seconds, native_bytes):
-    """One unpatched implementation, identified by its language's logo."""
+    """One reference implementation, identified by its language's logo."""
     return {"label": label, "kind": "logo", "image": image, "bytes": native_bytes, "seconds": seconds}
 
 
 def r_point(seconds, workspace_bytes):
-    return logo_point("R (unpatched)", R_LOGO, seconds, workspace_bytes)
+    return logo_point("", R_LOGO, seconds, workspace_bytes)
 
 
 R_ON_TIED = "docs/figures/result/r-tied.json"
 
 
 def r_on_tied(case):
-    """Unpatched R on a tied input: its own native routine and the workspace it requests. The experiments do
+    """R on a tied input: its native routine and the workspace it requests. The experiments do
     not run R there, so r-tied.R beside this file measures it; returns its point and its source record."""
     measured = json.loads((ROOT / R_ON_TIED).read_text(encoding="utf-8"))[case]
     if not measured["identical"]:
@@ -127,7 +127,7 @@ def r_on_tied(case):
 
 
 def build_point(label, digit, colour, seconds, native_bytes, *, filled=True, name=None):
-    """One build: a circle with its experiment number; `name` adds a direct label in the zoom panel."""
+    """One build: a circle with its experiment marker; `name` adds a direct label in the zoom panel."""
     return {"label": label, "kind": "build", "digit": str(digit), "color": colour, "filled": filled,
             "bytes": native_bytes, "seconds": seconds, "name": name}
 
@@ -191,14 +191,16 @@ def _axes(ax, x_unit, y_unit, xmax, ymax):
     ax.yaxis.set_major_locator(MaxNLocator(5, min_n_ticks=3))
     ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: "0" if value == 0 else f"{value:g} {x_unit}"))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
+    ax.set_xlabel("requested memory", fontsize=9)
     ax.set_ylabel(f"time ({y_unit})", fontsize=9)
 
 
-def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(), target_width_cm):
-    """Draw one input's points on linear axes, with a second panel enlarging `zoom` = (max bytes, max seconds)."""
-    fig, (main, near) = publication_subplots(1, 2, target_width_cm=target_width_cm, height_cm=7.4)
-    main.set_position([0.11, 0.14, 0.37, 0.58])
-    near.set_position([0.61, 0.14, 0.37, 0.58])
+def absolute_figure(entries, *, zoom, links=(), target_width_cm):
+    """Draw one input's points on linear axes, with a second panel enlarging `zoom` = (max bytes, max seconds).
+    The panels carry no headings: the grey box and the grey panel pair them."""
+    fig, (main, near) = publication_subplots(1, 2, target_width_cm=target_width_cm, height_cm=6.8)
+    main.set_position([0.11, 0.153, 0.37, 0.631])
+    near.set_position([0.61, 0.153, 0.37, 0.631])
     limits = {"all": (max(p["bytes"] for p in entries) * 1.08, max(p["seconds"] for p in entries) * 1.1),
               "zoom": zoom}
     units = {key: (_unit(x, BYTE_UNITS), _unit(y, TIME_UNITS)) for key, (x, y) in limits.items()}
@@ -206,7 +208,6 @@ def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(),
     for key, ax in (("all", main), ("zoom", near)):
         (xmax, ymax), ((x_unit, x_size), (y_unit, y_size)) = limits[key], units[key]
         _axes(ax, x_unit, y_unit, xmax / x_size, ymax / y_size)
-        ax.set_xlabel("memory requested", fontsize=9)
         shown = [p for p in entries if key == "all" or (p["bytes"] <= zoom[0] and p["seconds"] <= zoom[1])]
         _draw(ax, shown, [path for path in links if all(p in shown for p in path)], x_size, y_size)
         panels[key] = {"x_unit": x_unit, "y_unit": y_unit, "x_max": xmax / x_size, "y_max": ymax / y_size}
@@ -216,8 +217,9 @@ def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(),
                              facecolor="#eef1f4",
                              edgecolor="#9aa4ae", linewidth=0.8, zorder=1))
     near.set_facecolor("#eef1f4")
-    if panels["all"]["y_unit"] == panels["zoom"]["y_unit"]:
-        near.set_ylabel("")  # the same label once, on the left panel
+    near.set_xlabel("")
+    near.set_ylabel("" if panels["all"]["y_unit"] == panels["zoom"]["y_unit"] else panels["zoom"]["y_unit"],
+                    fontsize=9)
     named = [p for p in entries if p.get("name") and p["bytes"] <= zoom[0] and p["seconds"] <= zoom[1]]
     if named:
         (_, near_x), (_, near_y) = units["zoom"]
@@ -225,9 +227,6 @@ def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(),
                                 [p["name"] for p in named], fontsize=9)
         if unplaced:
             raise ValueError(f"labels that fit nowhere: {unplaced}")
-    for ax, text in ((main, "all"), (near, zoom_heading)):
-        heading = ax.text(0, 1.03, text, transform=ax.transAxes, fontsize=9, fontweight="bold", ha="left", va="bottom")
-        tag_artist(heading, semantic_role="column_heading")
     handles, labels, seen = [], [], set()
     for entry in entries:
         if entry["label"] in seen:
@@ -240,7 +239,7 @@ def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(),
                loc="upper center",
                bbox_to_anchor=(0.5, 0.99), ncol=3, fontsize=9, handlelength=1.2,
                handletextpad=0.4, columnspacing=1.2, borderaxespad=0, frameon=False)
-    return fig, {"plot_kind": "one input: memory requested across, time up, linear axes; right panel enlarges the grey box",
+    return fig, {"plot_kind": "one input: requested memory across, time up, linear axes; right panel enlarges the grey box",
                  "target_width_cm": target_width_cm,
                  "panels": panels, "zoom_box": {"bytes": zoom[0], "seconds": zoom[1]},
                  "memory_definition": MEMORY_NOTE,
