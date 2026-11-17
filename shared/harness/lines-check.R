@@ -40,11 +40,14 @@ check_lines <- function(root, readme = file.path(root, "README.md")) {
     variants$exp_007_shorter_source <- "deletions_only"
   }
   split_row <- function(row) trimws(strsplit(row, "|", fixed = TRUE)[[1]])[-1L]
-  header <- grep("^\\| experiment \\|", text, value = TRUE)
-  if (length(header) != 1L) stop("expected one experiment table header in ", readme)
-  column <- match("source lines against&nbsp;R", split_row(header))
-  if (is.na(column)) stop("missing source lines against R column in ", readme)
-  rows <- grep("^\\| \\[exp_[0-9]{3} ", text, value = TRUE)
+  # Only the table counted against original R; the Python table counts against scikit-misc.
+
+  header <- which(vapply(text, function(line) "source lines against&nbsp;R" %in% split_row(line), NA))
+  if (length(header) != 1L) stop("expected one table with a source lines against R column in ", readme)
+  column <- match("source lines against&nbsp;R", split_row(text[header]))
+  after <- text[-seq_len(header)]
+  table <- after[seq_len(match(FALSE, startsWith(after, "|"), nomatch = length(after) + 1L) - 1L)]
+  rows <- grep("^\\| \\[exp_[0-9]{3} ", table, value = TRUE)
   experiments <- vapply(rows, function(row) {
     sub(".*\\]\\(experiments/([^/]+)/README\\.md\\).*", "\\1", split_row(row)[1])
   }, "")

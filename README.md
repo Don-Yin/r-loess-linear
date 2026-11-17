@@ -23,18 +23,13 @@ the cache adds 3.06 MB to R's 20.3 GB native request; actual-vertex storage remo
 
 source lines are added / removed against original R, without the standalone `register.c` adapter. Counts are physical lines and include copyright and modification notices. `exp_003` gives the range over all eight variants; the other rows name their primary build. `Rscript shared/harness/lines-check.R` recounts this column and fails if it is stale.
 
-## Python® port
+the same two changes in Python®, against unpatched scikit-misc 0.5.3 at N = 45,000:
 
-[exp_008 Python skmisc](experiments/exp_008_python_skmisc/README.md): the same N = 45,000 input, against unpatched scikit-misc 0.5.3. time is median prediction user CPU; memory is native bytes requested, excluding the unchanged dense influence matrix.
+| experiment | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | memory against&nbsp;skmisc | time against&nbsp;skmisc | source lines against&nbsp;skmisc |
+|---|---|---|---|---|
+| [exp_008 Python skmisc](experiments/exp_008_python_skmisc/README.md) | <a href="docs/assets/exp_008-result.png"><img alt="exp_008 result" src="docs/assets/exp_008-result.png" width="400"></a> | cache: **same**<br>cache + actual vertices: **1,301×&nbsp;less** | cache: **220×&nbsp;faster**<br>cache + actual vertices: **267×&nbsp;faster** | cache: +57&nbsp;/&nbsp;−20<br>cache + actual vertices: +161&nbsp;/&nbsp;−75 |
 
-<a href="docs/assets/exp_008-result.png"><img alt="Unpatched Python skmisc against the cache and actual-vertex builds" src="docs/assets/exp_008-result.png" width="600"></a>
-
-| build | memory against unpatched skmisc | time against unpatched skmisc | source lines against scikit-misc 0.5.3 |
-|---|---|---|---|
-| cache only | **same** | **220×&nbsp;faster** | +57&nbsp;/&nbsp;−20 |
-| cache + actual vertices | **1,301×&nbsp;less** | **267×&nbsp;faster** | +161&nbsp;/&nbsp;−75 |
-
-source lines are the final physical differences, including notices, after `cache.patch`, or both patches in order, against the pinned unpatched source (`lines-against-skmisc.csv: variant, added/removed`). Python builds agree bit for bit with each other, not with R; at N = 46,337 the unpatched build crashes. [Scope, licences and Python mark attribution](experiments/exp_008_python_skmisc/README.md).
+time is median prediction user CPU; memory is native bytes requested, excluding the unchanged dense influence matrix. source lines are the final physical differences, including notices, after `cache.patch`, or both patches in order, against the pinned unpatched source (`lines-against-skmisc.csv: variant, added/removed`). Python builds agree bit for bit with each other, not with R; at N = 46,337 the unpatched build crashes. [Scope, licences and Python mark attribution](experiments/exp_008_python_skmisc/README.md).
 
 ## compare the methods
 

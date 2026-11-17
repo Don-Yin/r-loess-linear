@@ -36,7 +36,7 @@ all 15 tied inputs, each build as a multiple of R:
 
 the [README table](../README.md#experiments) shows the current added and removed physical source lines against original R. counts include copyright and modification notices and exclude the standalone `register.c` adapter. the range covers all eight `exp_003` variants, including the dropped one; `exp_007` leads with `deletions_only` and keeps its slower `reduced` comparison in the note.
 
-the source records are `part=source`, columns `added` and `removed`, in each experiment's `.results/tables/lines-against-r.csv`. `Rscript shared/harness/lines-check.R` prepares the sources again and checks the README column. the [Python port](../README.md#python-port) instead counts against pinned scikit-misc 0.5.3 in `lines-against-skmisc.csv`.
+the source records are `part=source`, columns `added` and `removed`, in each experiment's `.results/tables/lines-against-r.csv`. `Rscript shared/harness/lines-check.R` prepares the sources again and checks the README column. [exp_008](../experiments/exp_008_python_skmisc/README.md) instead counts against pinned scikit-misc 0.5.3 in `lines-against-skmisc.csv`.
 
 ## how to read the figures
 
