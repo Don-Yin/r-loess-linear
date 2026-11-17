@@ -12,5 +12,7 @@ loesslin.Rcheck/
 docs/figures/.bundles/
 __pycache__/
 .ipynb_checkpoints/
-# editor settings with this machine's paths
+# editor settings and indexes with this machine's paths
 pyrightconfig.json
+.cache/
+.ruff_cache/

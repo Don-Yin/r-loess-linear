@@ -16,6 +16,10 @@
 #  A copy of the GNU General Public License is available at
 #  https://www.R-project.org/Licenses/
 
+# Modified by Don Yin on 2026-11-06: add the cache argument.
+# Modified by Don Yin on 2026-11-11: use the linear-memory variance entry
+# derived from R-devel r90840, retaining R's prediction and reduction order.
+
 loess <-
 function(formula, data, weights, subset, na.action, model = FALSE,
 	 span = 0.75, enp.target, degree = 2L, parametric = FALSE,

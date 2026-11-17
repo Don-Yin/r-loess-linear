@@ -14,6 +14,11 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
+/* Modified by Don Yin on 2026-11-06: add the cache argument and
+ * allocate the inverse-neighbor lookup for interpolation standard errors.
+ * Source: R-devel revision 90840; see docs/source-provenance.md.
+ */
+
 /* <UTF8> chars are handled as whole strings.
    They are passed from Fortran so had better be ASCII.
  */

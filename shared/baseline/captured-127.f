@@ -1,3 +1,22 @@
+C     Copyright (C) 1998--2020 The R Core Team
+C     Copyright (C) 2026 Don Yin
+C
+C  The authors of this software are Cleveland, Grosse, and Shyu.
+C  Copyright (c) 1989, 1992 by AT&T.
+C  Permission to use, copy, modify, and distribute this software for any
+C  purpose without fee is hereby granted, provided that this entire notice
+C  is included in all copies of any software which is or includes a copy
+C  or modification of this software and in all copies of the supporting
+C  documentation for such software.
+C  THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+C  WARRANTY.  IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
+C  REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
+C  OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+
+C     Derived from ehg127 in R-devel revision 90840, stats/loessf.f.
+C     Modified by Don Yin on 2026-11-11: extract the response-independent
+C     QR/SVD path, capture its scalars and retain ordered diagnostics.
+
 c The SE operator is response-independent. Preserve QR/SVD and diagnostics,
 c but do not compute a second, unused fitted value at every tree vertex.
       subroutine fhg127(q,n,d,nf,f,x,psi,rw,kernel,k,dist,b,w,

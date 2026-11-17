@@ -1,0 +1,280 @@
+--- a/R/predict-se.R
++++ b/R/predict-se.R
+@@ -1,4 +1,8 @@
+ # Modified by Don Yin on 2026-11-17:
++# Apply the documented p-canonical-ifit reduction to the
++# standalone package; retain original notices.
++
++# Modified by Don Yin on 2026-11-17:
+ # Remove unused standalone-package entries and response-solving
+ # paths; retain notices and numerical operations.
+ 
+@@ -37,16 +41,17 @@
+ 
+     if (object$pars$surface == "direct")
+         return(stats::predict(object, newdata, se = TRUE))
++    newx <- if (is.null(newdata)) object$x
++            else if (is.data.frame(newdata))
++                as.matrix(model.frame(delete.response(terms(object)),
++                                      newdata, na.action = na.pass))
++            else as.matrix(newdata)
++    fit <- stats::predict(object, newx, se = FALSE)
+     op <- object$pars
+-    res <- predLoess(object$y, object$x,
+-                     newx = if (is.null(newdata)) object$x
+-                            else if (is.data.frame(newdata))
+-                                as.matrix(model.frame(delete.response(terms(object)),
+-                                                      newdata, na.action = na.pass))
+-                            else as.matrix(newdata),
++    res <- predLoess(object$y, object$x, newx,
+                      object$s, object$weights, object$robust,
+                      op$span, op$degree, op$parametric, op$drop.square,
+-                     op$surface, op$cell, op$family, object$kd, object$divisor)
++                     op$surface, op$cell, op$family, object$kd, object$divisor, fit)
+     if (!is.null(out.attrs <- attr(newdata, "out.attrs"))) {
+         res$fit <- array(res$fit, out.attrs$dim, out.attrs$dimnames)
+         res$se.fit <- array(res$se.fit, out.attrs$dim, out.attrs$dimnames)
+@@ -56,7 +61,7 @@
+ }
+ 
+ predLoess <- function(y, x, newx, s, weights, robust, span, degree,
+-                      parametric, drop.square, surface, cell, family, kd, divisor)
++                      parametric, drop.square, surface, cell, family, kd, divisor, fit)
+ {
+     D <- NCOL(x); N <- NROW(x); M <- NROW(newx)
+     x <- as.matrix(x); newx <- as.matrix(newx)
+@@ -80,13 +85,8 @@
+                           (x.evaluate >= rep(ranges[1L, ], rep_len(M, D)))) == D
+         inside[is.na(inside)] <- FALSE
+         M1 <- sum(inside)
+-        fit <- se.fit <- rep_len(NA_real_, M)
++        se.fit <- rep_len(NA_real_, M)
+         if (any(inside)) {
+-            fit[inside] <- .C(C_loess_ifit,
+-                              as.integer(kd$parameter), as.integer(kd$a),
+-                              as.double(kd$xi), as.double(kd$vert),
+-                              as.double(kd$vval), as.integer(M1),
+-                              as.double(x.evaluate[inside, ]), fit = double(M1))$fit
+             variance <- .C(C_loess_ise,
+                             y, x, as.double(x.evaluate[inside, ]),
+                             as.double(weights), as.double(span),
+--- a/src/loessc.c
++++ b/src/loessc.c
+@@ -1,4 +1,9 @@
+ /* Modified by Don Yin on 2026-11-17:
++ * Apply the documented p-canonical-ifit reduction to the
++ * standalone package; retain original notices.
++ */
++
++/* Modified by Don Yin on 2026-11-17:
+  * Remove unused standalone-package entries and response-solving
+  * paths; retain notices and numerical operations.
+  */
+@@ -61,17 +66,12 @@
+ 		     int nonparametric, const int drop_square[],
+ 		     int sum_drop_sqr, bool setLf);
+ 
+-static
+-void loess_grow (int *parameter, int *a,
+-		 double *xi, double *vert, double *vval);
+ 
+ /* These (and many more) are in ./loessf.f : */
+ void F77_NAME(lowesd)(int* iv, int* liv, int* lv, double *v,
+ 		      int* d, int* n, double* f,
+ 		      int* ideg, int* nf, int* nvmax, int* setlf);
+ void F77_NAME(lowese)(int*, double*, int*, double*, double*);
+-void F77_NAME(ehg169)(int*, int*, int*, int*, int*, int*,
+-		      double*, int*, double*, int*, int*, int*);
+ /* exported (for loessf.f) : */
+ void F77_SUB(loesswarn)(int *i);
+ #ifdef FC_LEN_T
+@@ -106,14 +106,6 @@
+ 
+ 
+ 
+-void
+-loess_ifit(int *parameter, int *a, double *xi, double *vert,
+-	   double *vval, int *m, double *x_evaluate, double *fit)
+-{
+-    loess_grow(parameter, a, xi, vert, vval);
+-    F77_CALL(lowese)(iv, v, m, x_evaluate, fit);
+-    loess_free();
+-}
+ 
+ // Called from R's predLoess()  when 'se = TRUE' (and the default surface == "interpolate")
+ #ifndef LOESS_COEFFICIENT_BLOCK
+@@ -359,60 +351,10 @@
+     for(int i = 0; i < D; i++)
+ 	iv[i + 40] = drop_square[i];
+ }
+-
+-
+-static void
+-loess_grow(int *parameter, int *a, double *xi,
+-	   double *vert, double *vval)
+-{
+-    int d, vc, nc, nv, a1, v1, xi1, vv1, i, k;
+-
+-    d = parameter[0];
+-    vc = parameter[2];
+-    nc = parameter[3];
+-    nv = parameter[4];
+-    liv = parameter[5];
+-    lv = parameter[6];
+-    iv = R_Calloc(liv, int);
+-    v = R_Calloc(lv, double);
+-
+-    iv[1] = d;
+-    iv[2] = parameter[1];
+-    iv[3] = vc;
+-    iv[5] = iv[13] = nv;
+-    iv[4] = iv[16] = nc;
+-    iv[6] = 50;
+-    iv[7] = iv[6] + nc;
+-    iv[8] = iv[7] + vc * nc;
+-    iv[9] = iv[8] + nc;
+-    iv[10] = 50;
+-    iv[12] = iv[10] + nv * d;
+-    iv[11] = iv[12] + (d + 1) * nv;
+-    iv[27] = 173;
+ 
+-    v1 = iv[10] - 1;
+-    xi1 = iv[11] - 1;
+-    a1 = iv[6] - 1;
+-    vv1 = iv[12] - 1;
+ 
+-    for(i = 0; i < d; i++) {
+-	k = nv * i;
+-	v[v1 + k] = vert[i];
+-	v[v1 + vc - 1 + k] = vert[i + d];
+-    }
+-    for(i = 0; i < nc; i++) {
+-	v[xi1 + i] = xi[i];
+-	iv[a1 + i] = a[i];
+-    }
+-    k = (d + 1) * nv;
+-    for(i = 0; i < k; i++)
+-	v[vv1 + i] = vval[i];
+ 
+-    F77_CALL(ehg169)(&d, &vc, &nc, &nc, &nv, &nv, v+v1, iv+a1,
+-		    v+xi1, iv+iv[7]-1, iv+iv[8]-1, iv+iv[9]-1);
+-}
+ 
+-
+ /* begin ehg's FORTRAN-callable C-codes */
+ #define MSG(_m_)	msg = _(_m_) ; break ;
+ 
+--- a/src/loessf.f
++++ b/src/loessf.f
+@@ -1,4 +1,8 @@
+ C     Modified by Don Yin on 2026-11-17:
++C     Apply the documented p-canonical-ifit reduction to the
++C     standalone package; retain original notices.
++
++C     Modified by Don Yin on 2026-11-17:
+ C     Remove unused standalone-package entries and response-solving
+ C     paths; retain notices and numerical operations.
+ 
+@@ -410,60 +414,7 @@
+     3 continue
+       return
+       end
+-
+-      subroutine ehg169(d,vc,nc,ncmax,nv,nvmax,v,a,xi,c,hi,lo)
+-      integer           d,vc,nc,ncmax,nv,nvmax
+-      integer           a(ncmax), c(vc,ncmax), hi(ncmax), lo(ncmax)
+-      DOUBLE PRECISION v(nvmax,d),xi(ncmax)
+-
+-      integer novhit(1),i,j,k,mc,mv,p
+-      external ehg125,loesswarn
+-      integer ifloor
+-      external ifloor
+ 
+-c     as in bbox
+-c     remaining vertices
+-      do 3 i=2,vc-1
+-         j=i-1
+-         do 4 k=1,d
+-            v(i,k)=v(1+mod(j,2)*(vc-1),k)
+-            j=ifloor(DBLE(j)/2.D0)
+-    4    continue
+-    3 continue
+-c     as in ehg131
+-      mc=1
+-      mv=vc
+-      novhit(1)=-1
+-      do 5 j=1,vc
+-         c(j,mc)=j
+-    5 continue
+-c     as in rbuild
+-      p=1
+-c     top of while loop
+-    6 if(.not.(p.le.nc))goto 7
+-         if(a(p).ne.0)then
+-            k=a(p)
+-c           left son
+-            mc=mc+1
+-            lo(p)=mc
+-c           right son
+-            mc=mc+1
+-            hi(p)=mc
+-            call ehg125(p,mv,v,novhit,nvmax,d,k,xi(p),2**(k-1),2**(d-k),
+-     +           c(1,p),c(1,lo(p)),c(1,hi(p)))
+-         end if
+-         p=p+1
+-         goto 6
+-c     bottom of while loop
+-    7 if(.not.(mc.eq.nc))then
+-         call loesswarn(193)
+-      end if
+-      if(.not.(mv.eq.nv))then
+-         call loesswarn(193)
+-      end if
+-      return
+-      end
+-
+       DOUBLE PRECISION function ehg128(z,d,ncmax,vc,a,xi,lo,hi,c,v,
+      +     nvmax,vval)
+ 
+--- a/src/modreg.h
++++ b/src/modreg.h
+@@ -1,4 +1,9 @@
+ /* Modified by Don Yin on 2026-11-17:
++ * Apply the documented p-canonical-ifit reduction to the
++ * standalone package; retain original notices.
++ */
++
++/* Modified by Don Yin on 2026-11-17:
+  * Remove unused standalone-package entries and response-solving
+  * paths; retain notices and numerical operations.
+  */
+@@ -50,9 +55,6 @@
+ #include "statsErr.h"
+ 
+ void
+-loess_ifit(int *parameter, int *a, double *xi, double *vert,
+-	   double *vval, int *m, double *x_evaluate, double *fit);
+-void
+ loess_ise(double *y, double *x, double *x_evaluate, double *weights,
+ 	  double *span, int *degree, int *nonparametric,
+ 	  int *drop_square, int *sum_drop_sqr, double *cell,
+--- a/src/register.c
++++ b/src/register.c
+@@ -1,4 +1,9 @@
+ /* Modified by Don Yin on 2026-11-17:
++ * Apply the documented p-canonical-ifit reduction to the
++ * standalone package; retain original notices.
++ */
++
++/* Modified by Don Yin on 2026-11-17:
+  * Remove unused standalone-package entries and response-solving
+  * paths; retain notices and numerical operations.
+  */
+@@ -30,7 +35,6 @@
+ #endif
+ #define C_DEF(name,n) {#name,(DL_FUNC)&name,n}
+ static const R_CMethodDef ent[]={
+-    C_DEF(loess_ifit, 8),
+     C_DEF(loess_ise, 16),
+ #ifdef LOESS_TESTING
+     C_DEF(loess_factor_L,16),C_DEF(loess_probe,1),C_DEF(loess_block_probe,1),C_DEF(loess_geometry_probe,1),C_DEF(loess_retention_probe,1),C_DEF(loess_exception_probe,1),

@@ -23,6 +23,9 @@
 # REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
 # OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
 
+# Modified by Don Yin on 2026-11-11: extract prediction from R-devel
+# r90840 loess.R and use ordered native variance blocks for interpolation.
+
 predict_se <- function(object, newdata = NULL)
 {
     if (!inherits(object, "loess"))

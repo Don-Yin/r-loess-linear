@@ -18,6 +18,11 @@
  *  https://www.R-project.org/Licenses/
  */
 
+/* Modified by Don Yin on 2026-11-06: add the loess_ise cache argument.
+ * That R-devel r90840 interface is retained
+ * for the linear-memory variance entry and its experimental reductions.
+ */
+
 #ifndef R_MODREG_H
 #define R_MODREG_H
 

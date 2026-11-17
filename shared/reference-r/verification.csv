@@ -1,0 +1,6 @@
+file,revision,url,identical
+loess.R,90840,https://svn.r-project.org/R/!svn/bc/90840/trunk/src/library/stats/R/loess.R,TRUE
+loessc.c,90840,https://svn.r-project.org/R/!svn/bc/90840/trunk/src/library/stats/src/loessc.c,TRUE
+loessf.f,90840,https://svn.r-project.org/R/!svn/bc/90840/trunk/src/library/stats/src/loessf.f,TRUE
+modreg.h,90840,https://svn.r-project.org/R/!svn/bc/90840/trunk/src/library/stats/src/modreg.h,TRUE
+statsErr.h,90840,https://svn.r-project.org/R/!svn/bc/90840/trunk/src/library/stats/src/statsErr.h,TRUE

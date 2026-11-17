@@ -18,6 +18,10 @@
  *  https://www.R-project.org/Licenses/
  */
 
+/* Modified by Don Yin on 2026-11-06: add the loess_ise cache argument.
+ * Source: R-devel revision 90840; see docs/source-provenance.md.
+ */
+
 #ifndef R_MODREG_H
 #define R_MODREG_H
 

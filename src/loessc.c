@@ -15,6 +15,12 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
+/* Modified by Don Yin on 2026-11-06: add the cache argument.
+ * Modified by Don Yin on 2026-11-11: use captured local-fit records,
+ * ordered coefficient replay and bounded coefficient retention, derived
+ * from R-devel r90840, without changing the original arithmetic order.
+ */
+
 /* <UTF8> chars are handled as whole strings.
    They are passed from Fortran so had better be ASCII.
  */

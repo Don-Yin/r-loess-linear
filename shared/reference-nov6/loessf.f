@@ -13,6 +13,10 @@ C  WARRANTY.  IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
 C  REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
 C  OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
 
+C     Modified by Don Yin on 2026-11-06: add cache-controlled inverse
+C     neighbor positions to ehg191, preserving last-match search order.
+C     Source: R-devel revision 90840; see docs/source-provenance.md.
+
 C       altered by B.D. Ripley to
 C
 C       remove unused variables

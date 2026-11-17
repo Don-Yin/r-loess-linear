@@ -5,8 +5,9 @@ import csv
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+import numpy as np
 from matplotlib.image import BboxImage, imread
 from matplotlib.legend_handler import HandlerBase, HandlerTuple
 from matplotlib.lines import Line2D
@@ -52,25 +53,29 @@ def quiet_axes(ax):
 
 
 # One plot kind for every experiment's result: one input, memory requested
-# across and time up, both on plain linear axes in readable units, with R as
-# its logo and each build of the experiment as a circle carrying its number.
+# across and time up, both on plain linear axes in readable units, with the
+# unpatched implementation as its logo and each build as a numbered circle.
 # The right panel enlarges the grey box.
+
 DEFAULT_BLUE = "#4477aa"
 BEFORE_RED = "#cc6677"
 KEPT_GREEN = "#228833"
 DROPPED_PURPLE = "#aa3377"
 
 # R's logo, rendered from doc/html/Rlogo.svg of R 4.5.2 (The R Foundation, CC-BY-SA 4.0); drawn 13 pt tall.
+# Original sources, licence links, transformations and Python-mark terms: docs/licences.md.
+
 R_LOGO = imread(ROOT / "docs/assets/r-logo.png")
-R_LOGO_PT = 13
+LOGO_PT = 13
 MEMORY_NOTE = "memory: the native bytes each call requests; for R its C workspace"
 
 
-# The case the figures for exp_000, exp_001, exp_003 and exp_004 use: one predictor, N = 45,000, M = 80.
+# The case the figures for exp_002, exp_003, exp_005 and exp_006 use: one predictor, N = 45,000, M = 80.
+
 HEADLINE = {"d": "1", "n": "45000", "m": "80"}
 HEADLINE_TEXT = "one predictor, N = 45,000, M = 80"
-PROTOTYPE_TIMING = "experiments/exp_000_baseline_prototype/.results/tables/timing.csv"
-R_TIMING = "experiments/exp_000_baseline_prototype/.results/tables/r-timing.csv"
+PROTOTYPE_TIMING = "experiments/exp_002_baseline_prototype/.results/tables/timing.csv"
+R_TIMING = "experiments/exp_002_baseline_prototype/.results/tables/r-timing.csv"
 
 
 def headline_row(relative_path, numeric_columns):
@@ -86,8 +91,9 @@ def headline_row(relative_path, numeric_columns):
     return row
 
 
-# The normal builds of exp_003 and exp_004 have no allocation probe; exp_004 measures both sources built with it.
-PROBED_TIMING = "experiments/exp_004_sparse_retention/.results/tables/timing-comparison.csv"
+# The normal builds of exp_005 and exp_006 have no allocation probe; exp_006 measures both sources built with it.
+
+PROBED_TIMING = "experiments/exp_006_sparse_retention/.results/tables/timing-comparison.csv"
 HEADLINE_CASE = "d1-n45000-m80-cell0.2"
 
 
@@ -99,8 +105,13 @@ def probed_headline_bytes(column):
     return found[0][column], source_record(PROBED_TIMING, ["case", column])
 
 
+def logo_point(label, image, seconds, native_bytes):
+    """One unpatched implementation, identified by its language's logo."""
+    return {"label": label, "kind": "logo", "image": image, "bytes": native_bytes, "seconds": seconds}
+
+
 def r_point(seconds, workspace_bytes):
-    return {"label": "R (unpatched)", "kind": "r", "bytes": workspace_bytes, "seconds": seconds}
+    return logo_point("R (unpatched)", R_LOGO, seconds, workspace_bytes)
 
 
 R_ON_TIED = "docs/figures/result/r-tied.json"
@@ -133,14 +144,15 @@ TIME_UNITS = (("s", 1.0), ("ms", 1e-3))
 
 
 class _LogoHandler(HandlerBase):
-    """Legend handle showing R's logo, centred in the handle box."""
+    """Legend handle showing the supplied logo, centred in the handle box."""
 
     def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
+        logo = np.asarray(cast(OffsetImage, orig_handle).get_data())
         tall = 1.5 * height
-        wide = tall * R_LOGO.shape[1] / R_LOGO.shape[0]
+        wide = tall * logo.shape[1] / logo.shape[0]
         box = Bbox.from_bounds(width / 2 - xdescent - wide / 2, height / 2 - ydescent - tall / 2, wide, tall)
         image = BboxImage(TransformedBbox(box, trans), interpolation="antialiased")
-        image.set_data(R_LOGO)
+        image.set_data(logo)
         return [image]
 
 
@@ -159,8 +171,9 @@ def _draw(ax, entries, links, x_size, y_size):
                 color="#9aa4ae", linewidth=0.8, zorder=2)
     for entry in entries:
         at = (entry["bytes"] / x_size, entry["seconds"] / y_size)
-        if entry["kind"] == "r":
-            ax.add_artist(AnnotationBbox(OffsetImage(R_LOGO, zoom=R_LOGO_PT / R_LOGO.shape[0]), at,
+        if entry["kind"] == "logo":
+            logo = entry["image"]
+            ax.add_artist(AnnotationBbox(OffsetImage(logo, zoom=LOGO_PT / logo.shape[0]), at,
                                          frameon=False, pad=0, zorder=3))
             continue
         for style in _marker_styles(entry):
@@ -220,7 +233,7 @@ def absolute_figure(entries, *, zoom, zoom_heading="near 0, enlarged", links=(),
         if entry["label"] in seen:
             continue
         seen.add(entry["label"])
-        handles.append(OffsetImage(R_LOGO) if entry["kind"] == "r" else tuple(
+        handles.append(OffsetImage(entry["image"]) if entry["kind"] == "logo" else tuple(
             Line2D([], [], linestyle="none", **style) for style in _marker_styles(entry, 0.85)))
         labels.append(entry["label"])
     fig.legend(handles, labels, handler_map={tuple: HandlerTuple(ndivide=1), OffsetImage: _LogoHandler()},
@@ -243,4 +256,4 @@ def headline_figure(builds, sources, job, *, target_width_cm):
                                 target_width_cm=target_width_cm)
     return fig, {**kind, "scientific_job": job, "input": HEADLINE_TEXT,
                  "sources": [source_record(R_TIMING, ["r_s", "r_workspace_bytes"]), *sources],
-                 "timing": "median user CPU; R from the exp_000 run, each build from its own experiment's run"}
+                 "timing": "median user CPU; R from exp_002, each build from its own experiment"}

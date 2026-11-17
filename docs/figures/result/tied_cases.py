@@ -1,4 +1,4 @@
-"""One plot kind for the 15 tied inputs of exp_002 to exp_004: a row per input, the build as a multiple of R."""
+"""One plot kind for the 15 tied inputs of exp_004 to exp_006: a row per input, the build as a multiple of R."""
 from __future__ import annotations
 
 import json
@@ -72,6 +72,7 @@ def tied_cases_figure(table, build, panels, *, target_width_cm):
                         "values": dict(zip(names, values, strict=True))})
 
     # the inputs' names, left-aligned in one column beside the left panel
+
     first = axes[0]
     first.set_ylim(len(rows) - 0.4, -0.6)
     first.set_yticks(range(len(rows)), names)

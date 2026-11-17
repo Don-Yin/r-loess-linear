@@ -1,0 +1,142 @@
+--- a/src/loessf.f
++++ b/src/loessf.f
+@@ -1,4 +1,8 @@
+ C     Modified by Don Yin on 2026-11-17:
++C     Apply the documented e-shared-features reduction to the
++C     standalone package; retain original notices.
++
++C     Modified by Don Yin on 2026-11-17:
+ C     Remove unused standalone-package entries and response-solving
+ C     paths; retain notices and numerical operations.
+ 
+@@ -292,46 +296,11 @@
+          end if
+       end if
+ c     fill design matrix
+-      column=1
+       do 9 i3=1,nf
+-         b(i3,column)=w(i3)
++         call loessfeatures(d,tdeg,cdeg,q,x(psi(i3),1),n,w(i3),
++     +        b(i3,1),nf,column)
+     9 continue
+-      if(tdeg.ge.1)then
+-         do 10 j=1,d
+-            if(cdeg(j).ge.1)then
+-               column=column+1
+-               i5=q(j)
+-               do 11 i3=1,nf
+-                  b(i3,column)=w(i3)*(x(psi(i3),j)-i5)
+-   11          continue
+-            end if
+-   10    continue
+-      end if
+-      if(tdeg.ge.2)then
+-         do 12 j=1,d
+-            if(cdeg(j).ge.1)then
+-               if(cdeg(j).ge.2)then
+-                  column=column+1
+-                  i6=q(j)
+-                  do 13 i3=1,nf
+-                     b(i3,column)=w(i3)*(x(psi(i3),j)-i6)**2
+-   13             continue
+-               end if
+-               do 14 jj=j+1,d
+-                  if(cdeg(jj).ge.1)then
+-                     column=column+1
+-                     i7=q(j)
+-                     i8=q(jj)
+-                     do 15 i3=1,nf
+-                        b(i3,column)=w(i3)*(x(psi(i3),j)-i7)*(x(psi(i3),
+-     +jj)-i8)
+-   15                continue
+-                  end if
+-   14          continue
+-            end if
+-   12    continue
+-         k=column
+-      end if
++      if(tdeg.ge.2)k=column
+ c     equilibrate columns
+       do 17 j=1,k
+          scal=0
+@@ -1663,37 +1632,8 @@
+             do 9 comp=0,d
+                lf(b,comp)=0.D0
+     9       continue
+-            col=1
+-            feature(b,1)=w
+-            if(iv(32).ge.1)then
+-               do 10 j=1,d
+-                  if(iv(40+j).ge.1)then
+-                     col=col+1
+-                     i5=q(j)
+-                     feature(b,col)=w*(x(id+(j-1)*n)-i5)
+-                  end if
+-   10          continue
+-            end if
+-            if(iv(32).ge.2)then
+-               do 11 j=1,d
+-                  if(iv(40+j).ge.1)then
+-                     if(iv(40+j).ge.2)then
+-                        col=col+1
+-                        i6=q(j)
+-                        feature(b,col)=w*(x(id+(j-1)*n)-i6)**2
+-                     end if
+-                     do 12 jj=j+1,d
+-                        if(iv(40+jj).ge.1)then
+-                           col=col+1
+-                           i7=q(j)
+-                           i8=q(jj)
+-                           feature(b,col)=w*(x(id+(j-1)*n)-i7)*
+-     +                          (x(id+(jj-1)*n)-i8)
+-                        end if
+-   12                continue
+-                  end if
+-   11          continue
+-            end if
++            call loessfeatures(d,iv(32),iv(41),q,x(id),n,w,
++     +           feature(b,1),nb,col)
+     8    continue
+          do 13 j=1,k
+             do 14 b=1,na
+@@ -1894,3 +1834,40 @@
+       return
+       end
+ 
++
++c One design-row expression for producer and scalar reconstruction.
++      subroutine loessfeatures(d,degree,cdeg,q,x,stride,w,out,ld,col)
++      integer d,degree,cdeg(*),stride,ld,col,j,jj
++      double precision q(*),x(*),w,out(*),qj,qjj
++      col=1
++      out(1)=w
++      if(degree.ge.1)then
++         do 1 j=1,d
++            if(cdeg(j).ge.1)then
++               col=col+1
++               qj=q(j)
++               out(1+(col-1)*ld)=w*(x(1+(j-1)*stride)-qj)
++            end if
++    1    continue
++      end if
++      if(degree.ge.2)then
++         do 2 j=1,d
++            if(cdeg(j).ge.1)then
++               qj=q(j)
++               if(cdeg(j).ge.2)then
++                  col=col+1
++                  out(1+(col-1)*ld)=w*(x(1+(j-1)*stride)-qj)**2
++               end if
++               do 3 jj=j+1,d
++                  if(cdeg(jj).ge.1)then
++                     col=col+1
++                     qjj=q(jj)
++                     out(1+(col-1)*ld)=w*(x(1+(j-1)*stride)-qj)*
++     +                    (x(1+(jj-1)*stride)-qjj)
++                  end if
++    3          continue
++            end if
++    2    continue
++      end if
++      return
++      end

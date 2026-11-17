@@ -14,17 +14,17 @@ probe_values <- function(routines) {
 }
 
 # Lengths of the double (lv) and integer (liv) workspace R allocates for d predictors and n observations.
-reference_workspace <- function(d, n, span, degree) {
+reference_workspace <- function(d, n, span, degree, coefficient_vertices = max(200, n)) {
   nvmax <- max(200, n); nf <- min(n, floor(n * span + 1e-5))
   tau <- if (degree > 1) (d + 2) * (d + 1) / 2 else d + 1
-  c(lv = 50 + (3 * d + 3) * nvmax + n + (tau + 2) * nf + (d + 1) * nf * nvmax,
-    liv = 50 + (2^d + 4) * nvmax + 2 * n + nf * nvmax)
+  c(lv = 50 + (3 * d + 3) * nvmax + n + (tau + 2) * nf + (d + 1) * nf * coefficient_vertices,
+    liv = 50 + (2^d + 4) * nvmax + 2 * n + nf * coefficient_vertices)
 }
 
 # Bytes requested for one call: the C workspace (native; nv = 0 for R, the fit's vertex count for the Nov 6
 # patch, which adds an N by nv cache) and the N by M matrix the Nov 6 patch returns (L).
-reference_bytes <- function(d, n, m, span, degree, nv) {
-  w <- reference_workspace(d, n, span, degree)
+reference_bytes <- function(d, n, m, span, degree, nv, coefficient_vertices = max(200, n)) {
+  w <- reference_workspace(d, n, span, degree, coefficient_vertices)
   c(native = 8 * w[["lv"]] + 4 * w[["liv"]] + 4 * nv * n, L = 8 * n * m)
 }
 

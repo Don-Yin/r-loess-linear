@@ -1,3 +1,8 @@
+C     Derived from LINPACK dqrdc in R-devel r90840, src/appl/dqrdc.f.
+C     G. W. Stewart's original version and attribution are retained below.
+C     Modified by Don Yin on 2026-11-11: rename to dqrdcx and capture
+C     Householder scaling and update scalars without changing BLAS order.
+
 c
 c     dqrdc uses householder transformations to compute the qr
 c     factorization of an n by p matrix x.  column pivoting

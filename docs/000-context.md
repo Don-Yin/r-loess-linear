@@ -2,7 +2,7 @@
 
 R's `predict.loess(se = TRUE)` reserves a workspace for `nvmax = max(200, N)` k-d tree vertices, so its memory grows with N squared and N stops near 46,300 (span 0.5). loesslin keeps the same local fits and the same arithmetic, stores less, and recomputes what it did not store. the output is bit for bit identical to R's.
 
-<img alt="memory requested over N for R and the prototype" src="assets/exp_000-memory.png" width="520">
+<img alt="memory requested over N for R and the prototype" src="assets/exp_002-memory.png" width="520">
 
 ## limits
 

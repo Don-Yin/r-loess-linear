@@ -1,0 +1,151 @@
+--- a/skmisc/loess/src/loessc.c
++++ b/skmisc/loess/src/loessc.c
+@@ -1,3 +1,8 @@
++/* Modified by Don Yin on 2026-11-17:
++ * Port the inverse-neighbor cache from R-devel r90840 and Don
++ * Yin's public cache patch; preserve upstream notices.
++ */
++
+ /*
+  * The authors of this software are Cleveland, Grosse, and Shyu.
+  * Copyright (c) 1989, 1992 by AT&T.
+@@ -55,7 +60,7 @@
+ void F77_SUB(lowese)(int*, double*, int*, double*, double*);
+ void F77_SUB(lowesf)(double*, double*, double*, int*, double*,
+                      int*, double*, double*, int*, double*);
+-void F77_SUB(lowesl)(int*, double*, int*, double*, double*);
++void F77_SUB(lowesl)(int*, double*, int*, double*, double*, int*, int*);
+ void F77_SUB(ehg169)(int*, int*, int*, int*, int*, int*,
+                      double*, int*, double*, int*, int*, int*);
+ void F77_SUB(ehg196)(int*, int*, double*, double*);
+@@ -111,10 +116,11 @@
+         F77_SUB(lowesa)(trL, n, d, &tau, &nsing, one_delta, two_delta);
+     }
+     else if (!strcmp(*surf_stat, "interpolate/exact")) {
++        int cache = 0, inv = 0;
+         hat_matrix = Calloc((*n)*(*n), double);
+         LL = Calloc((*n)*(*n), double);
+         F77_SUB(lowesb)(x, y, weights, diagonal, &one, iv, v);
+-        F77_SUB(lowesl)(iv, v, n, x, hat_matrix);
++        F77_SUB(lowesl)(iv, v, n, x, hat_matrix, &cache, &inv);
+         F77_SUB(lowesc)(n, hat_matrix, LL, trL, one_delta, two_delta);
+         F77_SUB(lowese)(iv, v, n, x, surface);
+         loess_prune(parameter, a, xi, vert, vval);
+@@ -191,7 +197,9 @@
+                    sum_drop_sqr, &one);
+     v[1] = *cell;
+     F77_SUB(lowesb)(x, y, weights, &dzero, &zero, iv, v);
+-    F77_SUB(lowesl)(iv, v, m, x_evaluate, L);
++    int *inv = calloc((size_t) iv[5] * *n, sizeof(int));
++    F77_SUB(lowesl)(iv, v, m, x_evaluate, L, &one, inv);
++    Free(inv);
+     loess_free();
+ }
+ 
+--- a/skmisc/loess/src/loessf.f
++++ b/skmisc/loess/src/loessf.f
+@@ -1,3 +1,7 @@
++C     Modified by Don Yin on 2026-11-17:
++C     Port the inverse-neighbor cache from R-devel r90840 and Don
++C     Yin's public cache patch; preserve upstream notices.
++
+ C
+ C  The authors of this software are Cleveland, Grosse, and Shyu.
+ C  Copyright (c) 1989, 1992 by AT&T.
+@@ -773,18 +777,37 @@
+       end
+ 
+       subroutine ehg191(m,z,l,d,n,nf,nv,ncmax,vc,a,xi,lo,hi,c,v,nvmax,
+-     +                  vval2,lf,lq)
++     +                  vval2,lf,lq,cache,inv)
+ c Args
+-      integer m,d,n,nf,nv,ncmax,nvmax,vc
++      integer m,d,n,nf,nv,ncmax,nvmax,vc,cache
++      integer inv(nv,n)
+       double precision z(m,d), l(m,n), xi(ncmax), v(nvmax,d),
+      +     vval2(0:d,nvmax), lf(0:d,nvmax,nf)
+       integer lq(nvmax,nf),a(ncmax),c(vc,ncmax),lo(ncmax),hi(ncmax)
+ c Var
+       integer lq1,i,i1,i2,j,p
++      logical found
+       double precision zi(8)
+       double precision ehg128
+       external ehg128
+ 
++
++c Inverse neighbour positions, using workspace allocated by the C caller.
++c Ascending p preserves the original search's last-match semantics.
++
++      if(cache.ne.0)then
++         do 20 j=1,n
++            do 21 i=1,nv
++               inv(i,j)=0
++   21       continue
++   20    continue
++         do 22 p=1,nf
++            do 23 i=1,nv
++               inv(i,lq(i,p))=p
++   23       continue
++   22    continue
++      end if
++
+       do 3 j=1,n
+          do 4 i2=1,nv
+             do 5 i1=0,d
+@@ -792,17 +815,23 @@
+     5       continue
+     4    continue
+          do 6 i=1,nv
+-c           linear search for i in Lq
+-            lq1=lq(i,1)
+-            lq(i,1)=j
+-            p=nf
+-c           top of while loop
+-    7       if(.not.(lq(i,p).ne.j))goto 8
+-               p=p-1
+-               goto 7
+-c           bottom of while loop
+-    8       lq(i,1)=lq1
+-            if(lq(i,p).eq.j)then
++            if(cache.ne.0)then
++               p=inv(i,j)
++               found=p.ne.0
++            else
++c              linear search for i in Lq
++               lq1=lq(i,1)
++               lq(i,1)=j
++               p=nf
++c              top of while loop
++    7          if(.not.(lq(i,p).ne.j))goto 8
++                  p=p-1
++                  goto 7
++c              bottom of while loop
++    8          lq(i,1)=lq1
++               found=lq(i,p).eq.j
++            end if
++            if(found)then
+                do 9 i1=0,d
+                   vval2(i1,i)=lf(i1,i,p)
+     9          continue
+@@ -1704,9 +1733,9 @@
+ 
+ c Called either from loess_raw() only for case [surf_stat = "interpolate/exact"], or
+ c               from loess_ise() {used only when 'se = TRUE' and surface = "interpolate"}
+-      subroutine lowesl(iv,wv,m,z,l)
+-      integer m
+-      integer iv(*)
++      subroutine lowesl(iv,wv,m,z,l,cache,inv)
++      integer m,cache
++      integer iv(*),inv(*)
+       double precision l(m,*), wv(*), z(m,1)
+ 
+       external ehg182,ehg191
+@@ -1722,7 +1751,7 @@
+       end if
+       call ehg191(m,z,l,iv(2),iv(3),iv(19),iv(6),iv(17),iv(4),iv(iv(7)),
+      +     wv(iv(12)),iv(iv(10)),iv(iv(9)),iv(iv(8)),wv(iv(11)),iv(14),
+-     +     wv(iv(24)),wv(iv(34)),iv(iv(25)))
++     +     wv(iv(24)),wv(iv(34)),iv(iv(25)),cache,inv)
+       return
+       end
+ 

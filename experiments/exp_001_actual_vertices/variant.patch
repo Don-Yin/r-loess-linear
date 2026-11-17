@@ -1,0 +1,281 @@
+--- a/loessc.c
++++ b/loessc.c
+@@ -1,3 +1,9 @@
++/* Modified by Don Yin on 2026-11-17:
++ * Separate geometry construction from smoothing so influence
++ * arrays use the actual vertex count, without changing
++ * arithmetic.
++ */
++
+ /*
+  * Copyright (C) 1998--2025  The R Core Team
+  *
+@@ -71,6 +77,11 @@
+ void F77_NAME(lowesf)(double*, double*, double*, int*, double*,
+ 		      int*, double*, double*, int*, double*);
+ void F77_NAME(lowesl)(int*, double*, int*, double*, double*, int*, int*);
++void F77_NAME(lowesv)(double*, int*, double*);
++void F77_NAME(lowesj)(double*, double*, double*, double*, int*, int*,
++                     double*, int*, int*, double*, int*);
++void F77_NAME(lowesq)(int*, double*, int*, double*, double*, int*, int*,
++                     double*, int*, int*, int*);
+ void F77_NAME(ehg169)(int*, int*, int*, int*, int*, int*,
+ 		      double*, int*, double*, int*, int*, int*);
+ void F77_NAME(ehg196)(int*, int*, double*, double*);
+@@ -228,16 +239,29 @@
+ 	  int *drop_square, int *sum_drop_sqr, double *cell,
+ 	  int *d, int *n, int *m, double *fit, double *L, int *cache)
+ {
+-    loess_workspace(*d, *n, *span, *degree, *nonparametric, drop_square, *sum_drop_sqr, TRUE);
++    /* Keep the original geometry capacity; allocate influence coefficients
++       only after the same tree construction determines its actual size. */
++    loess_workspace(*d, *n, *span, *degree, *nonparametric, drop_square, *sum_drop_sqr, FALSE);
+ 
+-    int i0 = 0, *inv = &i0;
++    int i0 = 0, isetlf = 1, *inv = &i0;
+     double d0 = 0.0;
+     v[1] = *cell;
+-    F77_CALL(lowesb)(x, y, weights, &d0, &i0, iv, v);
+-    /* iv[5] is the actual number of vertices, set by lowesb(). */
++    F77_CALL(lowesv)(x, iv, v);
++    int nlf = iv[5];
++    double nlq = (double) nlf * iv[18], nlfcoef = (*d + 1.) * nlq;
++    /* The Fortran indices stay integer-sized; do not lift INT_MAX. */
++    if (nlq >= INT_MAX || nlfcoef >= INT_MAX) {
++        loess_free();
++        error(_("workspace required (%.0f) is too large%s."),
++              max(nlq, nlfcoef),
++              _(" probably because of setting 'se = TRUE'"));
++    }
++    int *lq = (int *) R_alloc((size_t) nlq, sizeof(int));
++    double *lf = (double *) R_alloc((size_t) nlfcoef, sizeof(double));
++    F77_CALL(lowesj)(x, y, weights, &d0, &i0, iv, v, &nlf, lq, lf, &isetlf);
+     if (*cache)
+-	inv = (int *) R_alloc((size_t) iv[5] * *n, sizeof(int));
+-    F77_CALL(lowesl)(iv, v, m, x_evaluate, L, cache, inv);
++        inv = (int *) R_alloc((size_t) iv[5] * *n, sizeof(int));
++    F77_CALL(lowesq)(iv, v, m, x_evaluate, L, &nlf, lq, lf, &isetlf, cache, inv);
+     loess_free();
+ }
+ 
+--- a/loessf.f
++++ b/loessf.f
+@@ -1,3 +1,8 @@
++C     Modified by Don Yin on 2026-11-17:
++C     Separate geometry construction from smoothing so influence
++C     arrays use the actual vertex count, without changing
++C     arithmetic.
++
+ C
+ C     Copyright (C) 1998--2020  The R Core Team
+ 
+@@ -428,23 +433,17 @@
+       return
+       end
+ 
+-      subroutine ehg131(x,y,rw,trl,diagl,kernel,k,n,d,nc,ncmax,vc,nv,
+-     +     nvmax,nf,f,a,c,hi,lo,pi,psi,v,vhit,vval,xi,dist,eta,b,ntol,
+-     +     fd,w,vval2,rcond,sing,dd,tdeg,cdeg,lq,lf,setlf)
+-      logical setlf
+-      integer identi,d,dd,i1,i2,j,k,kernel,n,nc,ncmax,nf,ntol,nv,
+-     +     nvmax,sing,tdeg,vc
+-      integer lq(nvmax,nf),a(ncmax),c(vc,ncmax),cdeg(8),hi(ncmax),
+-     +     lo(ncmax),pi(n),psi(n),vhit(nvmax)
+-      double precision f,fd,rcond,trl
+-      double precision lf(0:d,nvmax,nf),b(*),delta(8),diagl(n),dist(n),
+-     +     eta(nf),rw(n),v(nvmax,d),vval(0:d,nvmax),vval2(0:d,nvmax),
+-     +     w(nf),x(n,d),xi(ncmax),y(n)
+-      external ehg126,loesswarn,ehg139,ehg124
++c Geometry phase, extracted unchanged from ehg131.  The smoothing phase
++c is lowesj, allowing its influence arrays to use the actual vertex count.
++      subroutine ehg130(x,n,d,nc,ncmax,vc,nv,nvmax,a,c,hi,lo,pi,v,
++     +     vhit,xi,ntol,fd,dd)
++      integer identi,d,dd,i1,j,n,nc,ncmax,ntol,nv,nvmax,vc
++      integer a(ncmax),c(vc,ncmax),hi(ncmax),lo(ncmax),pi(n),
++     +     vhit(nvmax)
++      double precision fd,delta(8),v(nvmax,d),x(n,d),xi(ncmax)
++      external ehg126,loesswarn,ehg124
+       double precision dnrm2
+       external dnrm2
+-c     Identity -> identi
+-c     X -> b
+       if(.not.(d.le.8))then
+          call loesswarn(101)
+       end if
+@@ -465,17 +464,6 @@
+     5 continue
+       call ehg124(1,n,d,n,nv,nc,ncmax,vc,x,pi,a,xi,lo,hi,c,v,vhit,nvmax,
+      +ntol,fd,dd)
+-c     smooth
+-      if(trl.ne.0)then
+-         do 6 i2=1,nv
+-            do 7 i1=0,d
+-               vval2(i1,i2)=0
+-    7       continue
+-    6    continue
+-      end if
+-      call ehg139(v,nvmax,nv,n,d,nf,f,x,pi,psi,y,rw,trl,kernel,k,dist,
+-     +     dist,eta,b,d,w,diagl,vval2,nc,vc,a,xi,lo,hi,c,rcond,
+-     +     sing,dd,tdeg,cdeg,lq,lf,setlf,vval)
+       return
+       end
+ 
+@@ -781,13 +769,13 @@
+       end
+ 
+       subroutine ehg191(m,z,l,d,n,nf,nv,ncmax,vc,a,xi,lo,hi,c,v,nvmax,
+-     +                  vval2,lf,lq,cache,inv)
++     +                  nlf,vval2,lf,lq,cache,inv)
+ c Args
+-      integer m,d,n,nf,nv,ncmax,nvmax,vc,cache
++      integer m,d,n,nf,nv,ncmax,nvmax,nlf,vc,cache
+       integer inv(nv,n)
+       double precision z(m,d), l(m,n), xi(ncmax), v(nvmax,d),
+-     +     vval2(0:d,nvmax), lf(0:d,nvmax,nf)
+-      integer lq(nvmax,nf),a(ncmax),c(vc,ncmax),lo(ncmax),hi(ncmax)
++     +     vval2(0:d,nvmax), lf(0:d,nlf,nf)
++      integer lq(nlf,nf),a(ncmax),c(vc,ncmax),lo(ncmax),hi(ncmax)
+ c Var
+       integer lq1,i,i1,i2,j,p
+       logical found
+@@ -1371,14 +1359,14 @@
+ c somewhat similar to ehg136
+       subroutine ehg139(v,nvmax,nv,n,d,nf,f,x,pi,psi,y,rw,trl,kernel,k,
+      +     dist,phi,eta,b,od,w,diagl,vval2,ncmax,vc,a,xi,lo,hi,c,
+-     +     rcond,sing,dd,tdeg,cdeg,lq,lf,setlf,s)
++     +     rcond,sing,dd,tdeg,cdeg,lq,lf,nlf,setlf,s)
+       logical setlf
+       integer identi,d,dd,i,i2,i3,i5,i6,ii,ileaf,info,j,k,kernel,
+-     +     l,n,ncmax,nf,nleaf,nv,nvmax,od,sing,tdeg,vc
+-      integer lq(nvmax,nf),a(ncmax),c(vc,ncmax),cdeg(8),hi(ncmax),
++     +     l,n,ncmax,nf,nleaf,nv,nvmax,nlf,od,sing,tdeg,vc
++      integer lq(nlf,nf),a(ncmax),c(vc,ncmax),cdeg(8),hi(ncmax),
+      +     leaf(256),lo(ncmax),pi(n),psi(n)
+       DOUBLE PRECISION f,i1,i4,i7,rcond,scale,term,tol,trl
+-      DOUBLE PRECISION lf(0:d,nvmax,nf),sigma(15),u(15,15),e(15,15),
++      DOUBLE PRECISION lf(0:d,nlf,nf),sigma(15),u(15,15),e(15,15),
+      +     b(nf,k),diagl(n),dist(n),eta(nf),DGAMMA(15),q(8),qraux(15),
+      +     rw(n),s(0:od,nv),v(nvmax,d),vval2(0:d,nv),w(nf),work(15),
+      +     x(n,d),xi(ncmax),y(n),z(8)
+@@ -1531,17 +1519,22 @@
+       end
+ 
+       subroutine lowesb(xx,yy,ww,diagl,infl,iv,wv)
+-      integer infl
+-      integer iv(*)
+-      DOUBLE PRECISION xx(*),yy(*),ww(*),diagl(*),wv(*)
+-c Var
+-      DOUBLE PRECISION trl
+-      logical setlf
+-
+-      integer ifloor
+-      external ifloor
+-      external ehg131,loesswarn,ehg183
++      integer infl,iv(*),isetlf
++      double precision xx(*),yy(*),ww(*),diagl(*),wv(*)
++      external lowesv,lowesj
++      isetlf=0
++      if(iv(27).ne.iv(25))isetlf=1
++      call lowesv(xx,iv,wv)
++      call lowesj(xx,yy,ww,diagl,infl,iv,wv,iv(14),iv(iv(25)),
++     +     wv(iv(34)),isetlf)
++      return
++      end
+ 
++c Tree construction keeps the original nvmax/ncmax and all stop rules.
++      subroutine lowesv(xx,iv,wv)
++      integer iv(*),ifloor
++      double precision xx(*),wv(*)
++      external ifloor,ehg130,loesswarn
+       if(.not.(iv(28).ne.173))then
+          call loesswarn(174)
+       end if
+@@ -1551,19 +1544,39 @@
+          end if
+       end if
+       iv(28)=173
++      call ehg130(xx,iv(3),iv(2),iv(5),iv(17),iv(4),iv(6),iv(14),
++     +     iv(iv(7)),iv(iv(8)),iv(iv(9)),iv(iv(10)),iv(iv(22)),
++     +     wv(iv(11)),iv(iv(23)),wv(iv(12)),ifloor(iv(3)*wv(2)),
++     +     wv(3),iv(33))
++      return
++      end
++
++c Smoothing keeps vertex order, QR/SVD arithmetic and warning order.
++c Only the physical leading dimension of the influence arrays changes.
++      subroutine lowesj(xx,yy,ww,diagl,infl,iv,wv,nlf,lq,lf,isetlf)
++      integer infl,iv(*),nlf,lq(*),isetlf,i1,i2
++      double precision xx(*),yy(*),ww(*),diagl(*),wv(*),lf(*),trl
++      logical setlf
++      external ehg139,ehg183
+       if(infl.ne.0)then
+          trl=1.D0
+       else
+          trl=0.D0
+       end if
+-      setlf=(iv(27).ne.iv(25))
+-      call ehg131(xx,yy,ww,trl,diagl,iv(20),iv(29),iv(3),iv(2),iv(5),
+-     +     iv(17),iv(4),iv(6),iv(14),iv(19),wv(1),iv(iv(7)),iv(iv(8)),
+-     +     iv(iv(9)),iv(iv(10)),iv(iv(22)),iv(iv(27)),wv(iv(11)),
+-     +     iv(iv(23)),wv(iv(13)),wv(iv(12)),wv(iv(15)),wv(iv(16)),
+-     +     wv(iv(18)),ifloor(iv(3)*wv(2)),wv(3),wv(iv(26)),wv(iv(24)),
+-     +     wv(4),iv(30),iv(33),iv(32),iv(41),iv(iv(25)),wv(iv(34)),
+-     +     setlf)
++      setlf=isetlf.ne.0
++      if(trl.ne.0)then
++         do 6 i2=1,iv(6)
++            do 7 i1=0,iv(2)
++               wv(iv(24)+i1+(iv(2)+1)*(i2-1))=0
++    7       continue
++    6    continue
++      end if
++      call ehg139(wv(iv(11)),iv(14),iv(6),iv(3),iv(2),iv(19),wv(1),
++     +     xx,iv(iv(22)),iv(iv(27)),yy,ww,trl,iv(20),iv(29),
++     +     wv(iv(15)),wv(iv(15)),wv(iv(16)),wv(iv(18)),iv(2),
++     +     wv(iv(26)),diagl,wv(iv(24)),iv(5),iv(4),iv(iv(7)),
++     +     wv(iv(12)),iv(iv(10)),iv(iv(9)),iv(iv(8)),wv(4),iv(30),
++     +     iv(33),iv(32),iv(41),lq,lf,nlf,setlf,wv(iv(13)))
+       if(iv(14).lt.iv(6)+DBLE(iv(4))/2.D0)then
+          call ehg183('k-d tree limited by memory; nvmax=',
+      +        iv(14),1,1)
+@@ -1736,24 +1749,34 @@
+ c Called either from loess_raw() only for case [surf_stat = "interpolate/exact"], or
+ c               from loess_ise() {used only when 'se = TRUE' and surface = "interpolate"}
+       subroutine lowesl(iv,wv,m,z,l,cache,inv)
+-      integer m,cache
+-      integer iv(*),inv(*)
+-      double precision l(m,*), wv(*), z(m,1)
++      integer m,cache,iv(*),inv(*),isetlf
++      double precision l(m,*),wv(*),z(m,1)
++      external lowesq
++      isetlf=0
++      if(iv(26).ne.iv(34))isetlf=1
++      call lowesq(iv,wv,m,z,l,iv(14),iv(iv(25)),wv(iv(34)),
++     +     isetlf,cache,inv)
++      return
++      end
+ 
++c Generalized lowesl: geometry and influence arrays may have different
++c vertex strides.  Their semantic vertex count is still iv(6).
++      subroutine lowesq(iv,wv,m,z,l,nlf,lq,lf,isetlf,cache,inv)
++      integer m,cache,iv(*),inv(*),nlf,lq(*),isetlf
++      double precision l(m,*),wv(*),z(m,1),lf(*)
+       external loesswarn,ehg191
+-
+       if(.not.(iv(28).ne.172))then
+          call loesswarn(172)
+       end if
+       if(.not.(iv(28).eq.173))then
+          call loesswarn(173)
+       end if
+-      if(.not.(iv(26).ne.iv(34)))then
++      if(isetlf.eq.0)then
+          call loesswarn(175)
+       end if
+       call ehg191(m,z,l,iv(2),iv(3),iv(19),iv(6),iv(17),iv(4),iv(iv(7)),
+      +     wv(iv(12)),iv(iv(10)),iv(iv(9)),iv(iv(8)),wv(iv(11)),iv(14),
+-     +     wv(iv(24)),wv(iv(34)),iv(iv(25)),cache,inv)
++     +     nlf,wv(iv(24)),lf,lq,cache,inv)
+       return
+       end
+ 

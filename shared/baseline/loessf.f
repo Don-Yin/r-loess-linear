@@ -13,6 +13,11 @@ C  WARRANTY.  IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
 C  REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
 C  OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
 
+C     Modified by Don Yin on 2026-11-06: add inverse-neighbor caching.
+C     Modified by Don Yin on 2026-11-11: capture local-fit factors and
+C     replay ordered influence blocks, derived from R-devel r90840.
+C     Experimental reductions retain the original scalar and BLAS order.
+
 C       altered by B.D. Ripley to
 C
 C       remove unused variables

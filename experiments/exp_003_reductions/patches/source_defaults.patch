@@ -1,0 +1,11 @@
+--- a/loessc.c
++++ b/loessc.c
+@@ -225,7 +225,7 @@
+ 
+ // Called from R's predLoess()  when 'se = TRUE' (and the default surface == "interpolate")
+ #ifndef LOESS_COEFFICIENT_BLOCK
+-#define LOESS_COEFFICIENT_BLOCK 1
++#define LOESS_COEFFICIENT_BLOCK 32
+ #endif
+ #if LOESS_COEFFICIENT_BLOCK < 1
+ #error LOESS_COEFFICIENT_BLOCK must be positive

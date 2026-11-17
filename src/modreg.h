@@ -11,6 +11,7 @@
  * REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2017 The R Core Team.
@@ -29,6 +30,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  https://www.R-project.org/Licenses/
+ */
+
+/* Modified by Don Yin on 2026-11-06: add the loess_ise cache argument.
+ * The R-devel r90840 interface is retained
+ * for the package's ordered linear-memory variance entry.
  */
 
 #ifndef R_MODREG_H

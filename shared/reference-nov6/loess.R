@@ -16,6 +16,10 @@
 #  A copy of the GNU General Public License is available at
 #  https://www.R-project.org/Licenses/
 
+# Modified by Don Yin on 2026-11-06: add the cache argument and pass it
+# to the inverse-neighbor lookup used by interpolation standard errors.
+# Source: R-devel revision 90840; see docs/source-provenance.md.
+
 loess <-
 function(formula, data, weights, subset, na.action, model = FALSE,
 	 span = 0.75, enp.target, degree = 2L, parametric = FALSE,

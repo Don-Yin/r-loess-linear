@@ -73,7 +73,8 @@ fit_data <- function(X, m, span, cell, rows = FALSE) {
 # Half of the n values tied at 0.5, the rest spread over (1, 3): a neighbourhood of radius zero at the spike.
 one_spike <- function(n) c(rep(.5, n / 2), seq(1, 3, length.out = n / 2))
 
-# Toby's setup (tdhock/atime#135): one predictor, span 0.5, 80 prediction points across the range of x.
+# Toby Dylan Hocking's setup, https://github.com/tdhock/atime/issues/135:
+# one predictor, span 0.5, 80 prediction points across the range of x.
 toby_data <- function(n) {
   set.seed(20261105); x <- runif(n, -3, 3); y <- sin(x) + rnorm(n, sd = 0.35)
   list(fit = stats::loess(y ~ x, span = 0.5), nd = data.frame(x = seq(min(x), max(x), length.out = 80L)))

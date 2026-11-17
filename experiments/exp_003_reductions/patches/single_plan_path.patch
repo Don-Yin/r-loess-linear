@@ -1,0 +1,160 @@
+--- a/loessc.c
++++ b/loessc.c
+@@ -240,9 +240,6 @@
+ void F77_NAME(lowesfp)(double*,double*,int*,double*,int*,int*,double*,int*,int*,int*,double*);
+ void F77_NAME(lowesfb)(int*,double*,double*,double*,int*,int*,double*,int*,int*,int*,double*,int*,int*,double*,int*);
+ void F77_NAME(lowesfz)(int*,double*,double*,double*,int*,int*,int*,double*,int*);
+-void F77_NAME(lowesgp)(int*,double*,int*,double*,int*,double*,int*);
+-void F77_NAME(lowesgwarn)(int*,double*,double*,double*);
+-void F77_NAME(lowesfpeval)(int*,int*,int*,double*,double*,double*);
+ void F77_NAME(lowesfnp)(int*,double*,int*,double*,int*,double*,int*,double*,int*);
+ void F77_NAME(lowesfne)(int*,double*,int*,double*,int*,double*,int*,double*,int*,double*,double*);
+ void F77_NAME(lowesfdep)(int*,double*,int*,double*,double*,int*);
+@@ -283,7 +280,7 @@
+     loess_workspace(*d,*n,*span,*degree,*nonparametric,drop_square,*sum_drop_sqr,FALSE);
+     v[1]=*cell;
+     F77_CALL(lowesv)(x,iv,v);
+-    int nv=iv[5],nvmax=iv[13],planned=*d==1,vc=iv[3],edges=*d==2;
++    int nv=iv[5],nvmax=iv[13],vc=iv[3],edges=*d==2;
+     int k=*degree==0?1:iv[28]-(*degree>1?*sum_drop_sqr:0);
+     if(k>iv[18]) {
+         loess_free();error("scalar-record prototype requires at least k neighborhood rows");
+@@ -305,15 +302,12 @@
+     memset(which,0,(size_t)nv*sizeof(int));
+     memset(iwarn,0,(size_t)*m*sizeof(int));
+     memset(coef,0,(size_t)ncoef*LOESS_COEFFICIENT_BLOCK*sizeof(double));
+-    if(planned)F77_CALL(lowesgp)(iv,v,m,z,ids,basis,iwarn);
+-    else F77_CALL(lowesfnp)(iv,v,m,z,ids,basis,edgeids,edgebasis,iwarn);
++    F77_CALL(lowesfnp)(iv,v,m,z,ids,basis,edgeids,edgebasis,iwarn);
+     for(int i=0;i<vc* *m;++i)which[ids[i]-1]=1;
+     if(edges)for(int p=0;p<*m;++p)if(!iwarn[p])
+         for(int e=0;e<8;++e)which[edgeids[8*p+e]-1]=1;
+-    if(!planned) {
+-        dep_which=which;dep_warn=iwarn;dep_nv=nv;dep_m=*m;dep_query=-1;
+-        F77_CALL(lowesfdep)(iv,v,m,z,coef,iwarn);
+-    }
++    dep_which=which;dep_warn=iwarn;dep_nv=nv;dep_m=*m;dep_query=-1;
++    F77_CALL(lowesfdep)(iv,v,m,z,coef,iwarn);
+     int needed=0;
+     for(int l=0;l<nv;++l)if(which[l])which[l]=++needed;
+     double nr=(double)rs*needed,ni=(double)k*needed;
+@@ -355,10 +349,6 @@
+     factor_exceptional[1]=nexceptional;
+     factor_exceptional[2]=(double)nexceptional*batches;
+     double diag_calls=0;
+-    if(planned)for(int j=0;j<*n;++j)for(int i=0;i<*m;++i)if(iwarn[i]) {
+-        F77_CALL(lowesgwarn)(iv,v,z+i,coef);
+-        ++diag_calls;
+-    }
+     for(int j=0;j<*n;j+=LOESS_COEFFICIENT_BLOCK) {
+         int j0=j+1,nb=min(LOESS_COEFFICIENT_BLOCK,*n-j);
+         F77_CALL(lowesfb)(iv,v,x,weights,&k,&rs,rec,first,&j0,&nb,coef,which,keepof,kept,exceptional);
+@@ -366,13 +356,12 @@
+         for(int b=0;b<nb;++b) {
+             double *column=coef+(size_t)b*(size_t)ncoef;
+             double *result=block+(size_t)b* *m;
+-            if(planned)F77_CALL(lowesfpeval)(m,&nvmax,ids,basis,column,result);
+-            else F77_CALL(lowesfne)(iv,v,m,z,ids,basis,edgeids,edgebasis,iwarn,column,result);
++            F77_CALL(lowesfne)(iv,v,m,z,ids,basis,edgeids,edgebasis,iwarn,column,result);
+         }
+         loess_variance_add(sums,block,weights+j,*m,nb,terms);
+         if(full_L)memcpy(full_L+(size_t)j* *m,block,(size_t)*m*nb*sizeof(double));
+     }
+-    if(!planned)for(int i=0;i<*m;++i)if(iwarn[i])diag_calls+=*n;
++    for(int i=0;i<*m;++i)if(iwarn[i])diag_calls+=*n;
+     if(variance)for(int i=0;i<*m;++i)variance[i]=(double)sums[i];
+     double base=sizeof(int)*(double)liv+sizeof(double)*(double)lv;
+     double plan_ints=(vc+1.+(edges?8.:0.))* *m;
+--- a/loessf.f
++++ b/loessf.f
+@@ -2506,69 +2506,7 @@
+ 
+ 
+ 
+-c D1 geometric plan: basis expressions are copied verbatim from ehg128.
+-c No combined linear weights: lowesgeval retains the original arithmetic tree.
+-      subroutine lowesgp(iv,wv,m,z,ids,basis,iwarn)
+-      integer iv(*),m,ids(2,m),iwarn(m)
+-      double precision wv(*),z(m),basis(5,m)
+-      external ehgplan
+-      call ehgplan(m,z,iv(14),iv(17),iv(iv(7)),iv(iv(8)),
+-     +     iv(iv(9)),iv(iv(10)),wv(iv(11)),wv(iv(12)),
+-     +     ids,basis,iwarn)
+-      return
+-      end
+-
+-      subroutine ehgplan(m,z,nvmax,ncmax,a,c,hi,lo,v,xi,
+-     +     ids,basis,iwarn)
+-      integer m,nvmax,ncmax,a(ncmax),c(2,ncmax),hi(ncmax),
+-     +     lo(ncmax),ids(2,m),iwarn(m),i,j,nt,ll,ur
+-      double precision z(m),v(nvmax),xi(ncmax),basis(5,m),h,
+-     +     phi0,phi1,psi0,psi1
+-      do 1 i=1,m
+-         iwarn(i)=0
+-         nt=1
+-         j=1
+-    2    if(a(j).ne.0)then
+-            nt=nt+1
+-            if(z(i).le.xi(j))then
+-               j=lo(j)
+-            else
+-               j=hi(j)
+-            end if
+-            if(nt.ge.20)iwarn(i)=1
+-            goto 2
+-         end if
+-         ll=c(1,j)
+-         ur=c(2,j)
+-         ids(1,i)=ll
+-         ids(2,i)=ur
+-         h=(z(i)-v(ll))/(v(ur)-v(ll))
+-         if(.not.(-.001D0.le.h.and.h.le.1.001D0))iwarn(i)=1
+-         phi0=(1-h)**2*(1+2*h)
+-         phi1=h**2*(3-2*h)
+-         psi0=h*(1-h)**2
+-         psi1=h**2*(h-1)
+-         basis(1,i)=phi0
+-         basis(2,i)=phi1
+-         basis(3,i)=psi0
+-         basis(4,i)=psi1
+-         basis(5,i)=v(ur)-v(ll)
+-    1 continue
+-      return
+-      end
+-
+-c Original ehg128 is the diagnostic authority, in original column/point order.
+-      subroutine lowesgwarn(iv,wv,z,zero)
+-      integer iv(*)
+-      double precision wv(*),z(*),zero(*),ignored,ehg128
+-      external ehg128
+-      ignored=ehg128(z,iv(2),iv(17),iv(4),iv(iv(7)),wv(iv(12)),
+-     +     iv(iv(10)),iv(iv(9)),iv(iv(8)),wv(iv(11)),iv(14),zero)
+-      return
+-      end
+-
+-
+-c Geometry plans for D=2..4 only. D1 has its independently checked plan.f.
++c Geometry plans for D=1..4 use the original ehg128 arithmetic tree.
+ c All stored constants are original scalar subexpressions, not final weights.
+       subroutine lowesgnp(d,m,z,nvmax,ncmax,vc,a,c,hi,lo,v,xi,
+      +     ids,basis,edgeids,edgebasis,diag)
+@@ -3178,19 +3116,6 @@
+     9       continue
+          end if
+     2 continue
+-      return
+-      end
+-
+-c D1 already has a verified geometric plan. Other dimensions keep ehg128.
+-      subroutine lowesfpeval(m,nvmax,ids,basis,coef,block)
+-      integer m,nvmax,ids(2,m),i,ll,ur
+-      double precision basis(5,m),coef(0:1,nvmax),block(m)
+-      do 1 i=1,m
+-         ll=ids(1,i)
+-         ur=ids(2,i)
+-         block(i)=basis(1,i)*coef(0,ll) + basis(2,i)*coef(0,ur) +
+-     +        (basis(3,i)*coef(1,ll)+basis(4,i)*coef(1,ur))*basis(5,i)
+-    1 continue
+       return
+       end
+ 

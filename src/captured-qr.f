@@ -1,19 +1,17 @@
-C     Copyright (C) 2026 Don Yin
-C
-C  The authors of this software are Cleveland, Grosse, and Shyu.
-C  Copyright (c) 1989, 1992 by AT&T.
-C  Permission to use, copy, modify, and distribute this software for any
-C  purpose without fee is hereby granted, provided that this entire notice
-C  is included in all copies of any software which is or includes a copy
-C  or modification of this software and in all copies of the supporting
-C  documentation for such software.
-C  THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
-C  WARRANTY. IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
-C  REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
-C  OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
-C
+C     LINPACK dqrdc and dqrsl, version dated 08/14/78.
+C     G. W. Stewart, University of Maryland, Argonne National Lab.
+C     Source: R-devel revision 90840, src/appl/dqrdc.f and dqrsl.f.
+C     Copyright (C) 2026 Don Yin for the modifications.
+C     Modified by Don Yin on 2026-11-11: retain only unpivoted QR and Q*y,
+C     capturing the Householder and projection scalars as dqrdcx/dqrslx.
+C     BLAS calls and scalar operations retain the LINPACK order.
+C     Distributed with loesslin under GPL version 2 or version 3.
+C     R's doc/COPYRIGHTS describes LINPACK's copyright status as unclear;
+C     it reports that the routines are said to be public domain in the USA.
+
 c Capture the unpivoted Householder QR used by vertex records.
 c BLAS calls and scalar operations retain the LINPACK order.
+
       subroutine dqrdcx(x,ldx,n,p,qraux,alphas,qrts)
       integer ldx,n,p,j,l,ii0,jj0
       double precision x(ldx,p),qraux(p),alphas(15),qrts(15,15)

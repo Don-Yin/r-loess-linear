@@ -1,5 +1,6 @@
 ^experiments$
 ^docs$
+^COPYING(-GPL-3)?$
 ^shared$
 ^legacy-runs$
 ^\.thread$

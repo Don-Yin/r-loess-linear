@@ -14,6 +14,12 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
+/* Modified by Don Yin on 2026-11-06: add the cache argument.
+ * Modified by Don Yin on 2026-11-11: replace the interpolation workspace
+ * with captured local-fit records and ordered coefficient replay, derived
+ * from R-devel r90840. Experimental reductions retain these operations.
+ */
+
 /* <UTF8> chars are handled as whole strings.
    They are passed from Fortran so had better be ASCII.
  */

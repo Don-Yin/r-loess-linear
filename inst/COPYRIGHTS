@@ -2,15 +2,54 @@ loesslin
 
 Copyright (C) 2026 Don Yin for the package interface and new code.
 
-The implementation is derived from the R loess sources, copyright
-1998-2025 The R Core Team and copyright 1989, 1992 AT&T. The original
-loess authors are Cleveland, Grosse, and Shyu. The captured QR routines
-retain the arithmetic of the LINPACK routines used by R.
+The loess implementation and prediction wrapper are derived from R-devel
+Subversion revision 90840: src/library/stats/R/loess.R and the loessc.c,
+loessf.f, modreg.h and statsErr.h files in src/library/stats/src/.
+The loess sources are copyright 1998-2025 The R Core Team and copyright
+1989, 1992 AT&T. The original loess authors are William S. Cleveland,
+Eric Grosse, and Ming-Jen Shyu. The modreg.h header also retains copyright
+2003-2016 The R Foundation. The registration table adapts R's five loess
+entries for a standalone package library; it is not an AT&T algorithm.
 
-The package is distributed under the GNU General Public License,
-version 2 or version 3. Copies of these licenses are available with R
-in share/licenses/GPL-2 and share/licenses/GPL-3, and at
-https://www.R-project.org/Licenses/.
+The variance-reduce.h header adapts the row accumulation in do_colsum
+from src/main/array.c and the R_pow(x, 2) operation from
+src/main/arithmetic.c at that same R revision. These R sources retain
+copyright 1998-2026 The R Core Team, 2002-2025 The R Foundation, and
+1995-1997 Robert Gentleman and Ross Ihaka. Their GPL version 2-or-later
+notices apply to these portions, not the AT&T notice below. Don Yin added
+the ordered block-reduction interface.
+
+The captured-qr.f routines dqrdcx and dqrslx are modified and trimmed
+versions of LINPACK dqrdc and dqrsl, version dated 08/14/78, by
+G. W. Stewart, University of Maryland, Argonne National Lab. The sources
+are src/appl/dqrdc.f and src/appl/dqrsl.f at R-devel revision 90840.
+Don Yin retained the unpivoted QR and Q*y paths and captured their scalar
+operations without changing BLAS order. R's doc/COPYRIGHTS states:
+"The status of the included LINPACK routines is unclear: they are said to
+be in the public domain in the USA." No broader public-domain claim is
+made here. These adaptations are distributed with this GPL package.
+
+Modified by Don Yin on 2026-11-06: add the cache argument and inverse
+neighbor lookup. Modified by Don Yin on 2026-11-11: retain compact
+local-fit records, replay ordered coefficient blocks, prioritize
+exceptional vertices, and adapt the
+prediction wrapper and variance reduction. Per-file notices distinguish
+the cache reference, linear-memory prototype and package sources.
+
+The package and this repository's own experiment code are distributed
+under the GNU General Public License, version 2 or version 3. The R
+portions that specify version 2 or later retain that original notice.
+Unmodified license texts are in the repository's COPYING (GPL-2) and
+COPYING-GPL-3, copied from R's share/licenses. They are excluded from the
+built package, since R supplies share/licenses/GPL-2 and GPL-3. They are
+also available at https://www.R-project.org/Licenses/.
+
+R source URLs use https://svn.r-project.org/R/!svn/bc/90840/trunk/ followed
+by the paths above. The repository's docs/source-provenance.md identifies
+the public cache patch and subsequent experimental changes. The R logo
+used only in repository figures is copyright The R Foundation under
+CC-BY-SA 4.0; its source and license links are in docs/licences.md.
+That asset license does not replace the code licenses.
 
 Original AT&T notice
 

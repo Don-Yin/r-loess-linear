@@ -6,9 +6,13 @@ Authors@R: c(
     person("Don", "Yin", email = "Don_Yin@outlook.com",
            role = c("aut", "cre", "cph")),
     person("R Core Team", role = c("ctb", "cph")),
-    person(family = "Cleveland", role = "ctb"),
-    person(family = "Grosse", role = "ctb"),
-    person(family = "Shyu", role = "ctb"),
+    person("William S.", "Cleveland", role = "ctb"),
+    person("Eric", "Grosse", role = "ctb"),
+    person("Ming-Jen", "Shyu", role = "ctb"),
+    person("G. W.", "Stewart", role = "ctb"),
+    person("The R Foundation", role = "cph"),
+    person("Robert", "Gentleman", role = "cph"),
+    person("Ross", "Ihaka", role = "cph"),
     person("AT&T", role = "cph"))
 Description: Computes predictions and pointwise standard errors from a fit
     produced by stats::loess(), preserving the results of predict() with
@@ -17,8 +21,9 @@ Description: Computes predictions and pointwise standard errors from a fit
     The direct surface retains R's standard calculation. Derived from
     the loess implementation distributed with R.
 License: GPL-2 | GPL-3
-Copyright: 2026 Don Yin; 1998-2025 The R Core Team;
-    1989, 1992 AT&T. See inst/COPYRIGHTS for the original notice.
+Copyright: 2026 Don Yin; 1998-2026 The R Core Team;
+    2002-2025 The R Foundation; 1995-1997 Robert Gentleman and Ross Ihaka;
+    1989, 1992 AT&T. See inst/COPYRIGHTS for component notices and sources.
 Depends: R (>= 4.5.0)
 Imports: stats
 Encoding: UTF-8

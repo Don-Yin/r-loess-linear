@@ -1,4 +1,4 @@
-# Tied-input stress cases and their measurement, used by exp_002, exp_003 and exp_004. source() after common.R, speed.R
+# Tied-input stress cases and their measurement, used by exp_004, exp_005 and exp_006. source() after common.R, speed.R
 # and memory.R; functions only.
 
 # Deterministic tied inputs; the same cases feed every retention cap.

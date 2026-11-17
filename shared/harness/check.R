@@ -1,11 +1,19 @@
 # Exactness of a built variant against the installed R and against the Nov 6 patch: the fit, predict(se = TRUE),
 # warnings and errors, bit for bit (275 cases).
-# worker: Rscript <this file> <variant dir> <reference dir> <output csv> [profile path]
+# worker: Rscript <this file> <variant dir> <reference dir> <output csv> [profile path] [installed library]
+
 args <- commandArgs(TRUE); dir <- args[1]; ref <- args[2]; out <- args[3]
 self <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
 source(file.path(dirname(normalizePath(gsub("~+~", " ", self, fixed = TRUE))), "common.R"))
 start_profile(args[4])
-e <- load_loess(dir, "loessfactorpredict.so"); nov6 <- load_loess(ref, "loesssent.so")
+if (length(args) >= 5L && nzchar(args[5L])) {
+  package <- loadNamespace("loesslin", lib.loc = args[5L])
+  e <- list(loess = stats::loess, predict.loess = function(object, newdata, se) {
+    stopifnot(isTRUE(se))
+    package$predict_se(object, newdata)
+  })
+} else e <- load_loess(dir, "loessfactorpredict.so")
+nov6 <- load_loess(ref, "loesssent.so")
 rows <- list()
 add <- function(suite, id, ok) rows[[length(rows) + 1]] <<- data.frame(suite, id, ok)
 # a is R's captured fit and b the build's: the same warnings, then the same error, or the same fit (apart

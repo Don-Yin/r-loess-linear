@@ -1,3 +1,8 @@
+C     Derived from LINPACK dqrsl in R-devel r90840, src/appl/dqrsl.f.
+C     G. W. Stewart's original version and attribution are retained below.
+C     Modified by Don Yin on 2026-11-11: rename to dqrslx and capture
+C     projection scalars without changing the original BLAS order.
+
 c
 c     dqrsl applies the output of dqrdc to compute coordinate
 c     transformations, projections, and least squares solutions.

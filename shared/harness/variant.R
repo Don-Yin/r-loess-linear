@@ -57,14 +57,32 @@ copy_dir <- function(from, to) {
   if (!all(ok)) stop("could not copy ", from, " to ", to, call. = FALSE)
 }
 
-# Lines added and removed against the Nov 6 patched sources, counted with diff.
+# Copy a source tree and apply its one experiment patch; the caller owns the destination.
+
+prepare_variant <- function(exp_dir, dir, base = "baseline", patch = file.path(exp_dir, "variant.patch"), log) {
+  copy_dir(file.path(shared_dir(exp_dir), base), dir)
+  if (file.exists(patch)) sh("patch", c("-p1", "-E", "--no-backup-if-mismatch", "-i", patch), cwd = dir, log = log)
+  if (base == "reference-nov6") {
+    adapter <- file.path(dir, "register.c")
+    writeLines(sub("R_init_loesssent", "R_init_loessfactorpredict", readLines(adapter), fixed = TRUE), adapter)
+  }
+  invisible(dir)
+}
+
+# Lines added and removed against original R, including the separate register.c build adapter.
+
 line_count <- function(dir, ref) {
   files <- stats::setNames(list(), character())
-  for (f in sort(list.files(dir, "\\.(c|f|h|R)$"), method = "radix")) {
-    if (file.exists(file.path(ref, f))) {
-      d <- suppressWarnings(system2("diff", shQuote(c(file.path(ref, f), file.path(dir, f))), stdout = TRUE))
+  sources <- sort(union(list.files(dir, "\\.(c|f|h|R)$"), list.files(ref, "\\.(c|f|h|R)$")), method = "radix")
+  for (f in sources) {
+    before <- file.path(ref, f); after <- file.path(dir, f)
+    if (file.exists(before) && file.exists(after)) {
+      d <- suppressWarnings(system2("diff", shQuote(c(before, after)), stdout = TRUE, stderr = TRUE))
+      status <- attr(d, "status")
+      if (!is.null(status) && status != 1L) stop("diff failed for ", f, " with status ", status, ": ", paste(d, collapse = "\n"))
       n <- c(sum(startsWith(d, ">")), sum(startsWith(d, "<")))
-    } else n <- c(length(readLines(file.path(dir, f), warn = FALSE)), 0L)
+    } else if (file.exists(after)) n <- c(length(readLines(after, warn = FALSE)), 0L)
+    else n <- c(0L, length(readLines(before, warn = FALSE)))
     if (any(n > 0)) files[[f]] <- list(added = n[1], removed = n[2])
   }
   list(added = sum(vapply(files, `[[`, 0, "added")), removed = sum(vapply(files, `[[`, 0, "removed")), files = files)
@@ -92,8 +110,8 @@ run_variant <- function(exp_dir, flags = flags_at(MEASURED_CAP), profile = TRUE,
   if (!is.null(name) && !file.exists(patch)) stop("no patch for variant ", name, ": ", patch, call. = FALSE)
   work <- variant_work(exp_dir, name); out <- function(kind, file) result_path(exp_dir, kind, file, name)
   shared <- shared_dir(exp_dir); src <- file.path(work, "src"); ref <- file.path(work, "reference-nov6")
-  copy_dir(file.path(shared, "baseline"), src); copy_dir(file.path(shared, "reference-nov6"), ref)
-  if (file.exists(patch)) sh("patch", c("-p1", "-E", "--no-backup-if-mismatch", "-i", patch), cwd = src, log = out("logs", "patch.log"))
+  prepare_variant(exp_dir, src, patch = patch, log = out("logs", "patch.log"))
+  copy_dir(file.path(shared, "reference-nov6"), ref)
   build(ref, "loesssent.so", "", out("logs", "build-reference.log"))
   build(src, "loessfactorpredict.so", flags, out("logs", "build-variant.log"))
   checks <- out("tables", "checks.csv"); timing <- out("tables", "timing.csv")
@@ -101,7 +119,7 @@ run_variant <- function(exp_dir, flags = flags_at(MEASURED_CAP), profile = TRUE,
   worker(exp_dir, file.path(shared, "harness", "time.R"), c(src, ref, timing), "time", profile, name)
   c <- utils::read.csv(checks); t <- utils::read.csv(timing)
   suites <- lapply(split(c$ok, c$suite), function(ok) list(cases = length(ok), identical = sum(ok)))
-  summary <- list(flags = flags, patch = file.exists(patch), lines = line_count(src, file.path(shared, "reference-nov6")),
+  summary <- list(flags = flags, patch = file.exists(patch), lines = line_count(src, file.path(shared, "reference-r")),
     checks = list(cases = nrow(c), identical = sum(c$ok), suites = suites),
     timing = t[c("case", "nov6_s", "variant_s", "ratio", "native_bytes", "nov6_native_bytes", "nov6_L_bytes",
       "identical", "load1")])
