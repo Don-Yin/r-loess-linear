@@ -1,7 +1,9 @@
 """Sparse retention: time and memory on the 15 tied inputs, against R."""
 from __future__ import annotations
 
-from python_plotting_convention import FULL_TEXT_WIDTH_CM  # pyright: ignore[reportMissingImports]
+from python_plotting_convention import (  # pyright: ignore[reportMissingImports]
+    FULL_TEXT_WIDTH_CM,
+)
 from result_data import DEFAULT_BLUE
 from tied_cases import MEMORY, TIME, tied_cases_figure
 

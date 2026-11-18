@@ -13,7 +13,7 @@ if (cap != 65536) for (d in 3:4) for (n in c(1024, 4096)) {
 if (cap != 1048576) for (n in c(1024, 4096, 8192)) {
   cases[[length(cases) + 1]] <- list(suite = "zero-radius", d = 1, n = n, m = 128, cell = .2, span = .2)
 }
-rows <- list(); step <- progress(length(cases))
+rows <- raw <- list(); step <- progress(length(cases))
 for (i in seq_along(cases)) {
   cs <- cases[[i]]; d <- cs$d; n <- cs$n; tied <- cs$suite == "zero-radius"
   id <- paste(cs$suite, d, n, cs$m, cap, sep = "-"); step(i, id)
@@ -35,6 +35,7 @@ for (i in seq_along(cases)) {
   bytes <- reference_bytes(d, n, nrow(nd), cs$span, 2, p$vertices)
   s <- interleaved_seconds(list(nov6 = predict_a, baseline = predict_b), 3L,
     batch = if (!tied) 1L else if (n <= 1024) 20L else 5L)
+  raw[[i]] <- timing_rounds(id, if (tied) "native" else "public", s)
   rows[[i]] <- data.frame(id, suite = cs$suite, cap_bytes = cap, d, n, m = nrow(nd), cell = cs$cell,
     span = cs$span, identical = identical_out, public_error = inherits(public_a$value, "error-message"),
     warning_count = length(a$warnings), nov6_s = s[["nov6"]], baseline_s = s[["baseline"]],
@@ -43,6 +44,7 @@ for (i in seq_along(cases)) {
     needed_vertices = p$needed_vertices, p[c("retained_vertices", "retained_bytes", "zero_radius_vertices",
       "unretained_exceptional_vertices", "replay_vertex_fits")])
   write.csv(do.call(rbind, rows), out, row.names = FALSE)
+  write.csv(do.call(rbind, raw), sub("[.]csv$", "-rounds.csv", out), row.names = FALSE)
 }
 print(do.call(rbind, rows), row.names = FALSE)
 Rprof(NULL)

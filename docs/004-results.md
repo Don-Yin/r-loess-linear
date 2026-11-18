@@ -1,46 +1,57 @@
 # results
 
-macOS arm64, R 4.5.2. every build passes the 275 shared checks, bit for bit (256 against R, 19 against the cache reference); the package's own tests compare 324 more predictions (`tests/predict-se.R`). each experiment's page has its full numbers.
-
 ## against R
 
-| input | build | memory | against R | seconds | against R |
-|---|---|---:|---:|---:|---:|
-| one predictor, N = 45,000 | R, paired with `exp_000` | 20.3 GB | | 23.664 | |
-| | `exp_000` cache | 20.3 GB | 1.00015 times more | 0.155 | 153 times faster |
-| | R, paired with `exp_001` | 20.3 GB | | 22.893 | |
-| | `exp_001` actual vertices | 15.6 MB | 1,301 times less | 0.114 | 201 times faster |
-| | R, later comparisons | 20.3 GB | | 21.787 | |
-| | `exp_002` prototype | 38.7 MB | 523 times less | 0.039 | 559 times faster |
-| | `exp_003` independent reductions | 15.7–38.7 MB | 523–1,290 times less | 0.035–0.057 | 382–622 times faster |
-| | `exp_005` package source | 15.7 MB | 1,290 times less | 0.038 | 573 times faster |
-| | `exp_006` sparse retention | 11.7 MB | 1,724 times less | 0.038 | 573 times faster |
-| `grid-cloud-3-8192` | R | 5.7 MB | | 1.26 | |
-| | `exp_004` prototype | 87.0 MB | 15 times more | 29.5 | 23 times slower |
-| | `exp_005` package source | 87.0 MB | 15 times more | 0.62 | 2.0 times faster |
-| `grid-cloud-4-8192` | R | 7.2 MB | | 1.59 | |
-| | `exp_005` package source | 116.8 MB | 16 times more | 1.35 | 1.2 times faster |
-| | `exp_006` sparse retention | 53.7 MB | 7.5 times more | 0.86 | 1.8 times faster |
+| input | build | workspace | against R | time | against R |
+| --- | --- | ---: | ---: | ---: | ---: |
+| standard | R | 20.25 GB | — | 22.9 s | — |
+| standard | cache | 20.26 GB | 1.00015× more | 186 ms | 123× faster |
+| standard | actual vertices | 15.6 MB | 1,301× less | 98.2 ms | 233× faster |
+| standard | prototype | 40.2 MB | 504× less | 22.9 ms | 999× faster |
+| standard | independent reductions | 17.1–40.2 MB | 504–1,182× less | 23.2–43.7 ms | 523–986× faster |
+| standard | default-cap prototype | 40.2 MB | 504× less | 23.4 ms | 978× faster |
+| standard | package | 17.1 MB | 1,182× less | 23.6 ms | 968× faster |
+| standard | sparse retention | 12.6 MB | 1,601× less | 24.7 ms | 925× faster |
+| standard | deletions | 17.1 MB | 1,182× less | 23.6 ms | 970× faster |
+| standard | extra reductions | 17.1 MB | 1,182× less | 47.8 ms | 479× faster |
+| grid-cloud-3-8192 | R | 5.7 MB | — | 1.26 s | — |
+| same grid | prototype | 87.0 MB | 15× more | 31.1 s | 25× slower |
+| same grid | package | 87.0 MB | 15× more | 0.64 s | 2.0× faster |
+| grid-cloud-4-8192 | R | 7.2 MB | — | 1.59 s | — |
+| same grid | package | 116.8 MB | 16× more | 1.40 s | 1.1× faster |
+| same grid | sparse retention | 53.7 MB | 7.5× more | 0.81 s | 2.0× faster |
 
-the cache adds 3,060,000 bytes to the native request; it leaves the quadratic capacity unchanged. storing coefficients for the actual vertices removes unused capacity in `exp_001`, but its worst case and the full returned influence matrix remain quadratic. its four-predictor input with 256 observations uses more native memory than R when all 256 vertices are needed. each of the first two experiments measures its R time; later ordinary comparisons use `exp_002`'s R measurements.
+- standard rows use each experiment's `growth.csv: median_seconds, requested_bytes`.
+- R standard rows use `experiments/shared/artifacts/r-growth/growth.csv`.
+- tied rows use `tied-comparison.csv` and `docs/figures/result/r-tied.json: seconds, bytes`.
 
-all 15 tied inputs, each build as a multiple of R (the blue line at 1):
+<img alt="prototype tied inputs" src="assets/exp_004-tied.png" width="270">
+<img alt="package tied inputs" src="assets/exp_005-tied.png" width="270">
+<img alt="sparse tied inputs" src="assets/exp_006-tied.png" width="270">
 
-<img alt="R and exp_004 on the tied inputs" src="assets/exp_004-tied.png" width="270"> <img alt="R and exp_005 on the tied inputs" src="assets/exp_005-tied.png" width="270"> <img alt="R and exp_006 on the tied inputs" src="assets/exp_006-tied.png" width="270">
+## limits
 
-- on tied grids R's workspace is small, because its rows are 15 or 31 long, so the builds request more
-- R's time on the tied inputs moved by up to 20% between runs, so those ratios are rough
-- `predict(se = TRUE)` stops with an error on two tied inputs, in R and in every build, so the native routine is timed directly
+| item | coverage or limit | source |
+| --- | --- | --- |
+| standard input | N=45,000; one predictor | shared R `manifest.json: input`; `growth.csv: N` |
+| minimum R | 4.5.0 | `DESCRIPTION: Depends` |
+| tested platform only | macOS arm64, R 4.5.2 | exp_008 `machine.json: platform, r` |
+| toolchain | C and Fortran compilers, BLAS, LAPACK | `DESCRIPTION: SystemRequirements` |
+| R shared checks | 275/275, bit for bit | each `.results/tables/checks.csv: identical` |
+| package predictions | 324 comparisons | `tests/predict-se.R` |
+| public tied errors | 8: six repeated grids and two grid clouds | exp_004 `default-cap-findings.csv: public_error` |
+| first invalid workspace in Toby's setup | N=46,337; R stops and scikit-misc crashes | exp_002 `memory.csv: n, r_runs`; exp_008 `summary.csv: status` |
+| Python / R agreement | about 1e-14, not bit for bit | exp_008 `r-comparisons.csv: max_abs_error, bitwise_equal` |
+| tied-grid neighbourhoods | 15 or 31 points | exp_004 `default-cap-findings.csv: neighborhood_rows` |
 
-## code size
-
-the [experiment table](../experiments/README.md) shows added and removed physical source lines against R. counts include copyright and modification notices and exclude the standalone `register.c` adapter. the range covers all eight `exp_003` variants, including the dropped one; `exp_007` leads with `deletions_only` and keeps its slower `reduced` comparison in the note.
-
-the source records are `part=source`, columns `added` and `removed`, in each experiment's `.results/tables/lines-against-r.csv`. `Rscript shared/harness/lines-check.R` prepares the sources again and checks that table's column. [exp_008](../experiments/exp_008_python_skmisc/README.md) instead counts against pinned scikit-misc 0.5.3 in `lines-against-skmisc.csv`.
-
-the R logo is © The R Foundation, CC-BY-SA 4.0; [logo credits and terms](licences.md) also cover the Python mark.
+- actual-vertex storage is not a general linear-memory solution.
+- full influence matrices can remain quadratic.
+- tied errors use native standard-error routines for the comparison.
+- tied R times come from a separate run, so their ratios are rough.
+- sparse cost has [two timing states](../experiments/exp_006_sparse_retention/docs/details.md#results).
+- source-line counts and wrapper-mapping limits are in each experiment's details.
 
 ## how to read the figures
 
-- R is its logo; each build is a circle with its experiment number, and the package (`exp_005`) is P
-- the right panel enlarges the grey box
+- read the [measurement method](003-experiment-protocol.md#measurement).
+- read the [logo credits and terms](licences.md).

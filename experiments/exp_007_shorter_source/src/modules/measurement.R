@@ -91,11 +91,3 @@ timing_row <- function(id, seconds, exact, extra) {
   row$load1 <- load1()
   row
 }
-
-# Per-round seconds already divide by the batch size used by the shared timing helper.
-
-timing_rounds <- function(id, entry, seconds) {
-  values <- attr(seconds, "rounds")
-  data.frame(id, entry, round = rep(seq_len(nrow(values)), ncol(values)),
-    implementation = rep(colnames(values), each = nrow(values)), user_s = as.vector(values))
-}

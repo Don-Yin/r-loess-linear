@@ -45,6 +45,17 @@ def build_all(builds: tuple[str, ...]) -> None:
             archive.extractall(target)
     subprocess.run(["clang", "-dynamiclib", "-O2", str(EXPERIMENT_DIR / "src" / "modules" / "trace-alloc.c"), "-o", str(INTERMEDIATES / "trace-alloc.dylib")], check=True)
     metadata = {"platform": platform.platform(), "machine": platform.machine(), "python": platform.python_version(), "packages": {name: importlib.metadata.version(name) for name in ("numpy", "pyinstrument", "Cython", "meson-python", "meson", "ninja")}, "threads": {"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "VECLIB_MAXIMUM_THREADS": "1"}}
+    metadata["loess_blas"] = {}
+    for build in builds:
+        binary, = (INTERMEDIATES / "installs" / build / "skmisc" / "loess").glob("_loess*.so")
+        symbols = subprocess.check_output(["nm", "-g", str(binary)], text=True)
+        linkage = subprocess.check_output(["otool", "-L", str(binary)], text=True).splitlines()[1:]
+        required = ("daxpy", "ddot", "dnrm2", "dscal")
+        if any(f" T _{name}_" not in symbols for name in required) or any("blas" in line.lower() for line in linkage):
+            raise ValueError(f"unexpected numerical linkage for {binary}: {linkage!r}")
+        metadata["loess_blas"][build] = {"library": str(binary), "implementation": "bundled serial blas_lite.f",
+            "threads": 1, "thread_count_method": "serial implementation, no runtime thread-pool API",
+            "omp_controlled": False, "linked_libraries": [line.strip() for line in linkage]}
     for name, command in (("clang", ["clang", "--version"]), ("gfortran", ["gfortran", "--version"]), ("r", ["Rscript", "--version"])):
         metadata[name] = subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).splitlines()[0]
     (RESULTS / "json" / "machine.json").write_text(json.dumps(metadata, indent=2) + "\n")

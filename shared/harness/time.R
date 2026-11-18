@@ -7,7 +7,7 @@ harness <- dirname(normalizePath(gsub("~+~", " ", self, fixed = TRUE)))
 for (file in c("common.R", "speed.R", "memory.R")) source(file.path(harness, file))
 start_profile(args[4])
 new <- load_loess(dir, "loessfactorpredict.so"); nov6 <- load_loess(ref, "loesssent.so")
-step <- progress(length(timing_cases))
+step <- progress(length(timing_cases)); raw <- list()
 rows <- lapply(seq_along(timing_cases), function(i) {
   case <- names(timing_cases)[i]; step(i, case); cs <- timing_cases[[i]]; d <- cs[1]; n <- cs[2]; m <- cs[3]; data <- timing_data(cs)
   calls <- list(nov6 = function() nov6$predict.loess(data$fit, data$nd, se = TRUE, cache = TRUE),
@@ -17,9 +17,11 @@ rows <- lapply(seq_along(timing_cases), function(i) {
   if (!is.na(p$vertices) && p$vertices != nv) stop("probe vertex count ", p$vertices, " differs from the fit's ", nv)
   bytes <- reference_bytes(d, n, m, cs[5], 2, nv)
   s <- interleaved_seconds(calls, if (n > 5000) 5L else 9L)
+  raw[[i]] <<- timing_rounds(case, "public", s)
   data.frame(case, d, n, m, cell = cs[4], nov6_s = s[["nov6"]], variant_s = s[["variant"]],
     ratio = s[["variant"]] / s[["nov6"]], native_bytes = p$native_bytes, nov6_native_bytes = bytes[["native"]],
     nov6_L_bytes = bytes[["L"]], identical = identical_out, load1 = load1())
 })
 r <- do.call(rbind, rows); write.csv(r, out, row.names = FALSE); print(r, row.names = FALSE)
+write.csv(do.call(rbind, raw), sub("[.]csv$", "-rounds.csv", out), row.names = FALSE)
 Rprof(NULL)

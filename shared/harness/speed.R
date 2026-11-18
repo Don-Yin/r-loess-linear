@@ -13,6 +13,14 @@ interleaved_seconds <- function(calls, rounds, batch = 1L) {
   structure(apply(seconds, 2L, median), rounds = seconds)
 }
 
+# Per-round seconds already divide by the batch size used by the shared timing helper.
+
+timing_rounds <- function(id, entry, seconds) {
+  values <- attr(seconds, "rounds")
+  data.frame(id, entry, round = rep(seq_len(nrow(values)), ncol(values)),
+    implementation = rep(colnames(values), each = nrow(values)), user_s = as.vector(values))
+}
+
 # The nine timing cases (d, n, m, cell, span), named d<d>-n<n>-m<m>-cell<cell>, and the data of one of them.
 timing_cases <- list(c(1, 20000, 80, 0.2, 0.5), c(1, 45000, 80, 0.2, 0.5), c(1, 2000, 2000, 0.05, 0.5),
   c(2, 2000, 80, 0.05, 0.75), c(3, 1024, 80, 0.05, 0.75), c(4, 256, 80, 0.05, 0.75),

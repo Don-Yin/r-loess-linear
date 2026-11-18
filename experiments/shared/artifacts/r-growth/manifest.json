@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "artifact_id": "r-growth",
+  "producer_experiment": "exp_002_baseline_prototype",
+  "files": [
+    {
+      "path": "growth.csv",
+      "storage": "git"
+    },
+    {
+      "path": "predictions.rds",
+      "storage": "git"
+    }
+  ],
+  "input": {
+    "generator": "shared/harness/common.R:toby_data",
+    "seed": 20261105,
+    "predictors": 1,
+    "prediction_points": 80,
+    "span": 0.5,
+    "cell": 0.2,
+    "grid": "as.integer(10^seq(2, log10(45000), length.out = 12))"
+  },
+  "reference_source_lines": 3186,
+  "reference_sources": [
+    {
+      "path": "shared/reference-r/loess.R",
+      "lines": 548
+    },
+    {
+      "path": "shared/reference-r/loessc.c",
+      "lines": 447
+    },
+    {
+      "path": "shared/reference-r/loessf.f",
+      "lines": 2063
+    },
+    {
+      "path": "shared/reference-r/modreg.h",
+      "lines": 120
+    },
+    {
+      "path": "shared/reference-r/statsErr.h",
+      "lines": 8
+    }
+  ],
+  "runtime": {
+    "library": "/opt/homebrew/Cellar/openblas/0.3.33/lib/libopenblasp-r0.3.33.dylib",
+    "version": "0.3.33",
+    "threads": 1,
+    "OMP_NUM_THREADS": "1"
+  },
+  "timing": "five elapsed public predict(se = TRUE) calls per N in a fresh worker; median, min, max and sd; setup and gc outside the clock",
+  "requested_memory": "native workspace source formula; excludes the returned influence matrix"
+}

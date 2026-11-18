@@ -1,4 +1,4 @@
-# Unpatched R on the tied inputs of the result figures: Rscript docs/figures/result/r-tied.R, from the
+# R on the tied inputs of the result figures: Rscript docs/figures/result/r-tied.R, from the
 # repository root; about 20 minutes. Writes r-tied.json beside this file. The experiments do not run R on
 # these inputs, so it is measured here, by input: its own native routine (three runs), the workspace it
 # requests, and whether its result is the package source's bit for bit.
